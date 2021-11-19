@@ -1,0 +1,31 @@
+apply plugin: 'java'
+apply plugin: 'kotlin'
+
+project.group = 'pro.guopi'
+project.version = "1.0.0"
+
+sourceCompatibility = "11"
+targetCompatibility = "11"
+
+compileKotlin {
+    sourceCompatibility = "11"
+    targetCompatibility = "11"
+
+    kotlinOptions {
+        apiVersion = "1.6"
+        languageVersion = "1.6"
+        jvmTarget = "11"
+    }
+}
+
+compileTestKotlin {
+    sourceCompatibility = "11"
+    targetCompatibility = "11"
+
+    kotlinOptions {
+        apiVersion = "1.6"
+        languageVersion = "1.6"
+        jvmTarget = "11"
+    }
+}
+

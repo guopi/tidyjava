@@ -1,0 +1,7 @@
+apply from: '../common.gradle'
+
+project.description = "tidyjava sample"
+
+dependencies {
+    implementation(project(':core'))
+}

@@ -1,0 +1,10 @@
+apply from: '../common.gradle'
+
+apply plugin: 'java-library'
+
+project.description = "tidyjava core"
+
+
+dependencies {
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
