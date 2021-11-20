@@ -1,5 +1,7 @@
 package pro.guopi.tidy
 
+import pro.guopi.tidy.YErrors.defaultOnError
+
 class Y {
     companion object : ThreadPool("Tidy-Main", 1, 1) {
         @JvmStatic
@@ -32,8 +34,9 @@ class Y {
             pool.execute(action)
         }
 
+
         @JvmStatic
-        fun <R> asyncCall(plane: AsyncPlane, action: () -> R): YPromise<R> {
+        fun <R> asyncCall(plane: AsyncPlane, action: () -> R): YFuture<R> {
             return asyncCall(plane) { s ->
                 try {
                     val r = action()
@@ -45,24 +48,7 @@ class Y {
         }
 
         @JvmStatic
-        fun <R> asyncCall(plane: AsyncPlane, action: (s: AsyncSubscriber<R>) -> Unit): YPromise<R> {
-            return asyncLazy(plane, action).promise()
-        }
-
-        @JvmStatic
-        fun <R> asyncLazy(plane: AsyncPlane, action: () -> R): YFuture<R> {
-            return asyncLazy(plane) { s ->
-                try {
-                    val r = action()
-                    s.onAsyncValue(r)
-                } catch (e: Throwable) {
-                    s.onAsyncError(e)
-                }
-            }
-        }
-
-        @JvmStatic
-        fun <R> asyncLazy(
+        fun <R> asyncCall(
             plane: AsyncPlane,
             action: (asyncSubscriber: AsyncSubscriber<R>) -> Unit
         ): YFuture<R> {
@@ -82,6 +68,8 @@ class Y {
         fun setMaxComputationThreadCount(max: Int) {
             computation.pool.maximumPoolSize = max
         }
+
+
     }
 }
 

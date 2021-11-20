@@ -37,10 +37,8 @@ class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
             }
             ResultType.NO -> {
                 downStreams.add(ys)
-                ys.onSubscribe(object : YSubscription {
-                    override fun cancel() {
-                        downStreams.remove(ys)
-                    }
+                ys.onSubscribe(YSubscription {
+                    downStreams.remove(ys)
                 })
             }
         }

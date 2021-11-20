@@ -2,23 +2,46 @@ package pro.guopi.tidy.op
 
 import pro.guopi.tidy.*
 
-fun <T> YFuture<T>.then(
+fun <T> YFuture<T>.subscribe(
+    onSubscribe: FnOnSubscribe? = null,
     onValue: FnOnValue<T>? = null,
     onComplete: FnOnComplete? = null,
     onError: FnOnError? = null
 ) {
     Y.start {
-        this.subscribe(FutureThenSubscriber(onValue, onComplete, onError))
+        this.subscribe(LambdaSubscriber(onSubscribe, onValue, onComplete, onError))
     }
 }
 
-class FutureThenSubscriber<T>(
-    val onValue: FnOnValue<T>?,
-    val onComplete: FnOnComplete?,
-    val onError: FnOnError?
+fun <T> YFlow<T>.subscribe(
+    onSubscribe: FnOnSubscribe? = null,
+    onValue: FnOnValue<T>? = null,
+    onComplete: FnOnComplete? = null,
+    onError: FnOnError? = null
+) {
+    Y.start {
+        this.subscribe(LambdaSubscriber(onSubscribe, onValue, onComplete, onError))
+    }
+}
+
+class LambdaSubscriber<T>(
+    private val onSubscribe: FnOnSubscribe? = null,
+    private val onValue: FnOnValue<T>?,
+    private val onComplete: FnOnComplete?,
+    onError: FnOnError?
 ) : YSubscriber<T> {
+    private val onError = onError ?: YErrors.ON_ERROR_DEFAULT
+    private var upstream: YSubscription? = null
+
     override fun onSubscribe(ss: YSubscription) {
-        //DO NOTHING
+        upstream.let { up ->
+            if (up === null) {
+                upstream = ss
+                onSubscribe?.invoke(ss)
+            } else {
+                YErrors.handleSubscriptionAlreadySet(up, ss)
+            }
+        }
     }
 
     override fun onValue(v: T) {
@@ -30,6 +53,6 @@ class FutureThenSubscriber<T>(
     }
 
     override fun onError(e: Throwable) {
-        onError?.invoke(e)
+        onError.invoke(e)
     }
 }
