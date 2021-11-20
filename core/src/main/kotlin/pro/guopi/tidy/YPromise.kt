@@ -6,9 +6,11 @@ fun <T> YFuture<T>.promise(): YPromise<T> {
 
 class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
     private var upstream: YSubscription? = null
-    private val downStreams = ArrayList<YSubscriber<T>>()   //todo mainPlane FastList
-    private var result: Any? = null
+    private var result: Any? = null     // V | Throwable
     private var resultType = ResultType.NO
+
+    //todo mainPlane FastList
+    private val downStreams = ArrayList<YSubscriber<T>>()
 
     private enum class ResultType { NO, VALUE, COMPLETE, ERROR }
 
@@ -49,16 +51,36 @@ class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
     }
 
     override fun onValue(v: T) {
-        result = v
-        resultType = ResultType.VALUE
+        terminateFromUp(ResultType.VALUE, v)
+
+        downStreams.forEach {
+            it.onValue(v)
+        }
+        downStreams.clear()
     }
 
     override fun onComplete() {
-        resultType = ResultType.COMPLETE
+        terminateFromUp(ResultType.COMPLETE, null)
+
+        downStreams.forEach(YSubscriber<T>::onComplete)
+        downStreams.clear()
     }
 
     override fun onError(e: Throwable) {
-        result = e
-        resultType = ResultType.ERROR
+        terminateFromUp(ResultType.ERROR, e)
+        downStreams.forEach {
+            it.onError(e)
+        }
+        downStreams.clear()
+    }
+
+    private fun terminateFromUp(resultType: ResultType, result: Any?) {
+        if (this.resultType === ResultType.NO) {
+            this.result = result
+            this.resultType = resultType
+            upstream = YSubscription.TERMINATED
+        } else {
+            YErrors.defaultOnError(IllegalStateException("Result already set!"))
+        }
     }
 }
