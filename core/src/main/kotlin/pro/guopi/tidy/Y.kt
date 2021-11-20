@@ -30,15 +30,15 @@ class Y {
             return asyncStart(plane) { s ->
                 try {
                     val r = action()
-                    s.onValue(r)
+                    s.onAsyncValue(r)
                 } catch (e: Throwable) {
-                    s.onError(e)
+                    s.onAsyncError(e)
                 }
             }
         }
 
         @JvmStatic
-        fun <R> asyncStart(plane: YPlane, action: (s: YSubscriber<R>) -> Unit): YFuture<R> {
+        fun <R> asyncStart(plane: YPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFuture<R> {
             return asyncLazyStart(plane, action).cache()
         }
 
@@ -47,33 +47,36 @@ class Y {
             return asyncLazyStart(plane) { s ->
                 try {
                     val r = action()
-                    s.onValue(r)
+                    s.onAsyncValue(r)
                 } catch (e: Throwable) {
-                    s.onError(e)
+                    s.onAsyncError(e)
                 }
             }
         }
 
         @JvmStatic
-        fun <R> asyncLazyStart(plane: YPlane, action: (s: YSubscriber<R>) -> Unit): YFuture<R> {
+        fun <R> asyncLazyStart(
+            plane: YPlane,
+            action: (asyncSubscriber: AsyncSubscriber<R>) -> Unit
+        ): YFuture<R> {
             return object : YFuture<R> {
-                override fun subscribe(mainSub: YSubscriber<R>) {
+                override fun subscribe(s: YSubscriber<R>) {
                     plane.submit {
-                        action(object : YSubscriber<R> {
-                            override fun onSubscribe(s: YSubscription) {
-                                start { mainSub.onSubscribe(s) }
+                        action(object : AsyncSubscriber<R> {
+                            override fun onAsyncSubscribe(subscription: YSubscription) {
+                                start { s.onSubscribe(subscription) }
                             }
 
-                            override fun onValue(v: R) {
-                                start { mainSub.onValue(v) }
+                            override fun onAsyncValue(v: R) {
+                                start { s.onValue(v) }
                             }
 
-                            override fun onComplete() {
-                                start { mainSub.onComplete() }
+                            override fun onAsyncComplete() {
+                                start { s.onComplete() }
                             }
 
-                            override fun onError(e: Throwable) {
-                                start { mainSub.onError(e) }
+                            override fun onAsyncError(e: Throwable) {
+                                start { s.onError(e) }
                             }
                         })
                     }
@@ -82,13 +85,30 @@ class Y {
         }
 
         @JvmStatic
-        fun <R> asyncFlow(plane: YPlane, action: (s: YSubscriber<R>) -> Unit): YFlow<R> {
-            TODO()
-        }
+        fun <R> asyncFlow(plane: YPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFlow<R> {
+            return object : YFlow<R> {
+                override fun subscribe(s: YSubscriber<R>) {
+                    plane.submit {
+                        action(object : AsyncSubscriber<R> {
+                            override fun onAsyncSubscribe(subscription: YSubscription) {
+                                start { s.onSubscribe(subscription) }
+                            }
 
-        @JvmStatic
-        fun <R> asyncLazyFlow(plane: YPlane, action: (s: YSubscriber<R>) -> Unit): YFlow<R> {
-            TODO()
+                            override fun onAsyncValue(v: R) {
+                                start { s.onValue(v) }
+                            }
+
+                            override fun onAsyncComplete() {
+                                start { s.onComplete() }
+                            }
+
+                            override fun onAsyncError(e: Throwable) {
+                                start { s.onError(e) }
+                            }
+                        })
+                    }
+                }
+            }
         }
     }
 }

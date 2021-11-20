@@ -5,10 +5,10 @@ import pro.guopi.tidy.YSubscriber
 import pro.guopi.tidy.YSubscription
 
 fun <T> YFuture<T>.cache(): YFuture<T> {
-    return CacheFuture(this)
+    return FutureCache(this)
 }
 
-class CacheFuture<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
+class FutureCache<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
     private var upstream: YSubscription? = null
     private val downStreams = ArrayList<YSubscriber<T>>()   //todo mainPlane FastList
     private var result: Any? = null
@@ -48,8 +48,8 @@ class CacheFuture<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
         }
     }
 
-    override fun onSubscribe(s: YSubscription) {
-        this.upstream = s
+    override fun onSubscribe(subscription: YSubscription) {
+        this.upstream = subscription
     }
 
     override fun onValue(v: T) {

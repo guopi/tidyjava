@@ -9,7 +9,7 @@ interface YFlow<T> {
 }
 
 interface YSubscriber<in T> {
-    fun onSubscribe(s: YSubscription)
+    fun onSubscribe(subscription: YSubscription)
     fun onValue(v: T)
     fun onComplete()
     fun onError(e: Throwable)
