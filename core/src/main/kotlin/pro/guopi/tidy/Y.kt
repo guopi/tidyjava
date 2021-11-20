@@ -1,38 +1,19 @@
 package pro.guopi.tidy
 
-import java.util.concurrent.ScheduledThreadPoolExecutor
-import java.util.concurrent.ThreadFactory
-
 class Y {
-    companion object : ThreadFactory {
+    companion object : ThreadPool("Tidy-Main", 1, 1) {
         @JvmStatic
-        private val mainThreadGroup = ThreadGroup("Tidy-Main")
+        val io = SchedulerThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
 
         @JvmStatic
-        private val mainThreads = ScheduledThreadPoolExecutor(1, this)
-            .also {
-                it.maximumPoolSize = 1
-            }
-
-        @JvmStatic
-        val io: SchedulerThreadPoolPlane =
-            SchedulerThreadPoolPlane(
-                createScheduleThreadPool(0, Int.MAX_VALUE)
-            )
-
-        @JvmStatic
-        val computation: SchedulerThreadPoolPlane =
-            SchedulerThreadPoolPlane(
-                createScheduleThreadPool(0, Runtime.getRuntime().availableProcessors())
-            )
-
-        override fun newThread(r: Runnable): Thread {
-            return Thread(mainThreadGroup, mainThreadGroup.name)
-        }
+        val computation = SchedulerThreadPoolPlane(
+            "Tidy-Comp",
+            0, Runtime.getRuntime().availableProcessors()
+        )
 
         @JvmStatic
         fun isInMainPlane(): Boolean {
-            return Thread.currentThread().threadGroup === mainThreadGroup
+            return isRunningInPool()
         }
 
         /**
@@ -43,12 +24,12 @@ class Y {
             if (isInMainPlane())
                 action()
             else
-                mainThreads.execute(action)
+                pool.execute(action)
         }
 
         @JvmStatic
         fun startLater(action: () -> Unit) {
-            mainThreads.execute(action)
+            pool.execute(action)
         }
 
         @JvmStatic
@@ -98,7 +79,7 @@ class Y {
         }
 
         @JvmStatic
-        fun setMaxComputationThreadsCount(max: Int) {
+        fun setMaxComputationThreadCount(max: Int) {
             computation.pool.maximumPoolSize = max
         }
     }

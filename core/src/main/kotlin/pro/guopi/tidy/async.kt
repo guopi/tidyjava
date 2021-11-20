@@ -40,7 +40,7 @@ interface AsyncSubscriber<in T> {
 @FunctionalInterface
 fun interface AsyncSubscription {
     @MustCallInAsyncPlane
-    fun cancel()
+    fun cancelAsync()
 }
 
 class AsyncTask<T>(
@@ -56,7 +56,7 @@ class AsyncTask<T>(
             submitted?.let { sss ->
                 submitted = null
                 plane.start {
-                    sss.cancel()
+                    sss.cancelAsync()
                 }
             }
         }
