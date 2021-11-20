@@ -96,6 +96,11 @@ class Y {
                 AsyncTask(plane, ys, action).submit()
             }
         }
+
+        @JvmStatic
+        fun setMaxComputationThreadsCount(max: Int) {
+            computation.pool.maximumPoolSize = max
+        }
     }
 }
 
