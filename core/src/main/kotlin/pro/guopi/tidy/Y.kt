@@ -1,7 +1,5 @@
 package pro.guopi.tidy
 
-import pro.guopi.tidy.op.cache
-
 class Y {
     companion object {
         @JvmStatic
@@ -39,7 +37,7 @@ class Y {
 
         @JvmStatic
         fun <R> asyncStart(plane: AsyncPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFuture<R> {
-            return asyncLazyStart(plane, action).cache()
+            return asyncLazyStart(plane, action).promise()
         }
 
         @JvmStatic
@@ -62,7 +60,7 @@ class Y {
             return object : YFuture<R> {
                 override fun subscribe(s: YSubscriber<R>) {
                     plane.start {
-                        action(AsyncSubscriberOnYSubscriber(s, plane))
+                        action(AsyncSubscriberOnYSubscriber(plane, s))
                     }
                 }
             }
@@ -73,7 +71,7 @@ class Y {
             return object : YFlow<R> {
                 override fun subscribe(s: YSubscriber<R>) {
                     plane.submit {
-                        action(AsyncSubscriberOnYSubscriber(s, plane))
+                        action(AsyncSubscriberOnYSubscriber(plane, s))
                     }
                 }
             }

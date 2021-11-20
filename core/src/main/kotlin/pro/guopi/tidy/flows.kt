@@ -1,9 +1,12 @@
 package pro.guopi.tidy
 
+import java.lang.annotation.Inherited
+
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
+@Inherited
 annotation class MustCallInMainPlane
 
 interface YFuture<T> {

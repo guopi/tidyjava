@@ -1,13 +1,18 @@
 package pro.guopi.tidy
 
+import java.lang.annotation.Inherited
+import java.util.concurrent.atomic.AtomicBoolean
+
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
+@Inherited
 annotation class MustCallInAsyncPlane
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
+@Inherited
 annotation class CallInAnyPlane
 
 interface AsyncPlane {
@@ -38,36 +43,50 @@ interface AsyncSubscription {
 }
 
 
-class YSubscriptionOnAsyncSubscription(
-    val plane: AsyncPlane,
-    val s: AsyncSubscription
-) : YSubscription {
-    override fun cancel() {
-        plane.start {
-            s.cancel()
-        }
-    }
-}
-
 class AsyncSubscriberOnYSubscriber<T>(
-    private val s: YSubscriber<T>,
-    private val plane: AsyncPlane
-) : AsyncSubscriber<T> {
-    override fun onAsyncSubscribe(ss: AsyncSubscription) {
-        Y.start {
-            s.onSubscribe(YSubscriptionOnAsyncSubscription(plane, ss))
+    private val plane: AsyncPlane,
+    private val s: YSubscriber<T>
+) : AsyncSubscriber<T>, YSubscription, AtomicBoolean() {
+    private var asyncSS: AsyncSubscription? = null
+
+    @MustCallInMainPlane
+    override fun cancel() {
+        if (this.compareAndSet(false, true)) {
+            asyncSS?.let { ss ->
+                asyncSS = null
+                plane.start {
+                    ss.cancel()
+                }
+            }
         }
     }
 
+    @MustCallInAsyncPlane
+    override fun onAsyncSubscribe(ss: AsyncSubscription) {
+        asyncSS = ss
+        Y.start {
+            s.onSubscribe(this)
+        }
+    }
+
+    @MustCallInAsyncPlane
     override fun onAsyncValue(v: T) {
+        if (get()) return
+
         Y.start { s.onValue(v) }
     }
 
+    @MustCallInAsyncPlane
     override fun onAsyncComplete() {
+        if (get()) return
+
         Y.start { s.onComplete() }
     }
 
+    @MustCallInAsyncPlane
     override fun onAsyncError(e: Throwable) {
+        if (get()) return
+
         Y.start { s.onError(e) }
     }
 }
