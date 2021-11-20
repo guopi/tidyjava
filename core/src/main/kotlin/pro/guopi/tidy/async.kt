@@ -3,29 +3,37 @@ package pro.guopi.tidy
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
-annotation class CallInAsyncPlane
+annotation class MustCallInAsyncPlane
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.SOURCE)
+@MustBeDocumented
+annotation class CallInAnyPlane
 
 interface AsyncPlane {
+    @CallInAnyPlane
     fun start(action: () -> Unit)
+
+    @CallInAnyPlane
     fun submit(action: () -> Unit): AsyncSubscription
 }
 
 interface AsyncSubscriber<in T> {
-    @CallInAsyncPlane
+    @MustCallInAsyncPlane
     fun onAsyncSubscribe(ss: AsyncSubscription)
 
-    @CallInAsyncPlane
+    @MustCallInAsyncPlane
     fun onAsyncValue(v: T)
 
-    @CallInAsyncPlane
+    @MustCallInAsyncPlane
     fun onAsyncComplete()
 
-    @CallInAsyncPlane
+    @MustCallInAsyncPlane
     fun onAsyncError(e: Throwable)
 }
 
 interface AsyncSubscription {
-    @CallInAsyncPlane
+    @MustCallInAsyncPlane
     fun cancel()
 }
 

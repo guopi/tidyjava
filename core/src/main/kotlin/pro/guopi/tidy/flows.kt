@@ -4,34 +4,34 @@ package pro.guopi.tidy
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
-annotation class CallInMainPlane
+annotation class MustCallInMainPlane
 
 interface YFuture<T> {
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun subscribe(s: YSubscriber<T>)
 }
 
 interface YFlow<T> {
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun subscribe(s: YSubscriber<T>)
 }
 
 interface YSubscriber<in T> {
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun onSubscribe(ss: YSubscription)
 
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun onValue(v: T)
 
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun onComplete()
 
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun onError(e: Throwable)
 }
 
 interface YSubscription {
-    @CallInMainPlane
+    @MustCallInMainPlane
     fun cancel()
 
     object TERMINATED : YSubscription {
