@@ -18,6 +18,9 @@ class Y {
                 createScheduleThreadPool(0, Runtime.getRuntime().availableProcessors())
             )
 
+        /**
+         * run action in main plane
+         */
         @JvmStatic
         fun start(action: () -> Unit) {
             mainThreads.execute(action)
