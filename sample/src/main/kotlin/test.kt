@@ -1,8 +1,8 @@
-import pro.guopi.tidy.Tidy
+import pro.guopi.tidy.Y
 
 fun fromOtherThread() {
     //...
-    Tidy.start {
+    Y.start {
         //...
     }
 }
