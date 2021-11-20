@@ -17,15 +17,15 @@ annotation class CallInAnyPlane
 
 interface AsyncPlane {
     @CallInAnyPlane
-    fun start(action: () -> Unit)
+    fun start(action: Runnable)
 
     @CallInAnyPlane
-    fun submit(action: () -> Unit): AsyncSubscription
+    fun submit(action: Runnable): AsyncSubscription
 }
 
 interface AsyncSubscriber<in T> {
     @MustCallInAsyncPlane
-    fun onAsyncSubscribe(ss: AsyncSubscription)
+    fun isCanceled(): Boolean
 
     @MustCallInAsyncPlane
     fun onAsyncValue(v: T)
@@ -37,35 +37,45 @@ interface AsyncSubscriber<in T> {
     fun onAsyncError(e: Throwable)
 }
 
-interface AsyncSubscription {
+@FunctionalInterface
+fun interface AsyncSubscription {
     @MustCallInAsyncPlane
     fun cancel()
 }
 
-
-class AsyncSubscriberOnYSubscriber<T>(
+class AsyncTask<T>(
     private val plane: AsyncPlane,
-    private val s: YSubscriber<T>
-) : AsyncSubscriber<T>, YSubscription, AtomicBoolean() {
-    private var asyncSS: AsyncSubscription? = null
+    private val ys: YSubscriber<T>,
+    private val action: (s: AsyncSubscriber<T>) -> Unit
+) : AsyncSubscriber<T>, YSubscription, AtomicBoolean(), Runnable {
+    private var submitted: AsyncSubscription? = null
 
     @MustCallInMainPlane
     override fun cancel() {
         if (this.compareAndSet(false, true)) {
-            asyncSS?.let { ss ->
-                asyncSS = null
+            submitted?.let { sss ->
+                submitted = null
                 plane.start {
-                    ss.cancel()
+                    sss.cancel()
                 }
             }
         }
     }
 
-    @MustCallInAsyncPlane
-    override fun onAsyncSubscribe(ss: AsyncSubscription) {
-        asyncSS = ss
+    override fun isCanceled(): Boolean {
+        return get()
+    }
+
+    override fun run() {
+        if (get()) return
+        action(this)
+    }
+
+    @CallInAnyPlane
+    fun submit() {
+        submitted = plane.submit(this)
         Y.start {
-            s.onSubscribe(this)
+            ys.onSubscribe(this)
         }
     }
 
@@ -73,20 +83,20 @@ class AsyncSubscriberOnYSubscriber<T>(
     override fun onAsyncValue(v: T) {
         if (get()) return
 
-        Y.start { s.onValue(v) }
+        Y.start { ys.onValue(v) }
     }
 
     @MustCallInAsyncPlane
     override fun onAsyncComplete() {
         if (get()) return
 
-        Y.start { s.onComplete() }
+        Y.start { ys.onComplete() }
     }
 
     @MustCallInAsyncPlane
     override fun onAsyncError(e: Throwable) {
         if (get()) return
 
-        Y.start { s.onError(e) }
+        Y.start { ys.onError(e) }
     }
 }

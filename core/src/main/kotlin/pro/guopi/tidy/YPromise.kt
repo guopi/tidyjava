@@ -1,6 +1,6 @@
 package pro.guopi.tidy
 
-fun <T> YFuture<T>.promise(): YFuture<T> {
+fun <T> YFuture<T>.promise(): YPromise<T> {
     return YPromise(this)
 }
 
@@ -17,27 +17,27 @@ class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
     }
 
     @MustCallInMainPlane
-    override fun subscribe(s: YSubscriber<T>) {
+    override fun subscribe(ys: YSubscriber<T>) {
         when (resultType) {
             ResultType.VALUE -> {
-                s.onSubscribe(YSubscription.TERMINATED)
+                ys.onSubscribe(YSubscription.TERMINATED)
                 @Suppress("UNCHECKED_CAST")
-                s.onValue(result as T)
+                ys.onValue(result as T)
             }
             ResultType.COMPLETE -> {
-                s.onSubscribe(YSubscription.TERMINATED)
-                s.onComplete()
+                ys.onSubscribe(YSubscription.TERMINATED)
+                ys.onComplete()
             }
             ResultType.ERROR -> {
-                s.onSubscribe(YSubscription.TERMINATED)
+                ys.onSubscribe(YSubscription.TERMINATED)
                 @Suppress("UNCHECKED_CAST")
-                s.onError(result as Throwable)
+                ys.onError(result as Throwable)
             }
             ResultType.NO -> {
-                downStreams.add(s)
-                s.onSubscribe(object : YSubscription {
+                downStreams.add(ys)
+                ys.onSubscribe(object : YSubscription {
                     override fun cancel() {
-                        downStreams.remove(s)
+                        downStreams.remove(ys)
                     }
                 })
             }
