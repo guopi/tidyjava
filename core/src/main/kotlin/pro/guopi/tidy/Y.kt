@@ -1,7 +1,5 @@
 package pro.guopi.tidy
 
-import pro.guopi.tidy.YErrors.defaultOnError
-
 class Y {
     companion object : ThreadPool("Tidy-Main", 1, 1) {
         @JvmStatic
@@ -22,7 +20,7 @@ class Y {
          * run action in main plane
          */
         @JvmStatic
-        fun start(action: () -> Unit) {
+        fun runInMainPlane(action: () -> Unit) {
             if (isInMainPlane())
                 action()
             else
@@ -30,7 +28,7 @@ class Y {
         }
 
         @JvmStatic
-        fun startLater(action: () -> Unit) {
+        fun submitToMainPlane(action: () -> Unit) {
             pool.execute(action)
         }
 

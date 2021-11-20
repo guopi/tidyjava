@@ -8,7 +8,7 @@ fun <T> YFuture<T>.subscribe(
     onComplete: FnOnComplete? = null,
     onError: FnOnError? = null
 ) {
-    Y.start {
+    Y.runInMainPlane {
         this.subscribe(LambdaSubscriber(onSubscribe, onValue, onComplete, onError))
     }
 }
@@ -19,7 +19,7 @@ fun <T> YFlow<T>.subscribe(
     onComplete: FnOnComplete? = null,
     onError: FnOnError? = null
 ) {
-    Y.start {
+    Y.runInMainPlane {
         this.subscribe(LambdaSubscriber(onSubscribe, onValue, onComplete, onError))
     }
 }
