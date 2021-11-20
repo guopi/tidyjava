@@ -3,7 +3,7 @@ package pro.guopi.tidy
 import java.util.concurrent.ScheduledThreadPoolExecutor
 
 class SchedulerThreadPoolPlane(
-    internal val pool: ScheduledThreadPoolExecutor
+    val pool: ScheduledThreadPoolExecutor
 ) : AsyncPlane {
     @CallInAnyPlane
     override fun start(action: Runnable) {
