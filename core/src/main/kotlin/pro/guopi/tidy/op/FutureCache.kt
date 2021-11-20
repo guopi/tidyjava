@@ -48,8 +48,8 @@ class FutureCache<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
         }
     }
 
-    override fun onSubscribe(subscription: YSubscription) {
-        this.upstream = subscription
+    override fun onSubscribe(ss: YSubscription) {
+        this.upstream = ss
     }
 
     override fun onValue(v: T) {

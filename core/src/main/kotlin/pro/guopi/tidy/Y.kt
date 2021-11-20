@@ -26,7 +26,7 @@ class Y {
         }
 
         @JvmStatic
-        fun <R> asyncCall(plane: YPlane, action: () -> R): YFuture<R> {
+        fun <R> asyncCall(plane: AsyncPlane, action: () -> R): YFuture<R> {
             return asyncStart(plane) { s ->
                 try {
                     val r = action()
@@ -38,12 +38,12 @@ class Y {
         }
 
         @JvmStatic
-        fun <R> asyncStart(plane: YPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFuture<R> {
+        fun <R> asyncStart(plane: AsyncPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFuture<R> {
             return asyncLazyStart(plane, action).cache()
         }
 
         @JvmStatic
-        fun <R> asyncLazyCall(plane: YPlane, action: () -> R): YFuture<R> {
+        fun <R> asyncLazyCall(plane: AsyncPlane, action: () -> R): YFuture<R> {
             return asyncLazyStart(plane) { s ->
                 try {
                     val r = action()
@@ -56,59 +56,28 @@ class Y {
 
         @JvmStatic
         fun <R> asyncLazyStart(
-            plane: YPlane,
+            plane: AsyncPlane,
             action: (asyncSubscriber: AsyncSubscriber<R>) -> Unit
         ): YFuture<R> {
             return object : YFuture<R> {
                 override fun subscribe(s: YSubscriber<R>) {
-                    plane.submit {
-                        action(object : AsyncSubscriber<R> {
-                            override fun onAsyncSubscribe(subscription: YSubscription) {
-                                start { s.onSubscribe(subscription) }
-                            }
-
-                            override fun onAsyncValue(v: R) {
-                                start { s.onValue(v) }
-                            }
-
-                            override fun onAsyncComplete() {
-                                start { s.onComplete() }
-                            }
-
-                            override fun onAsyncError(e: Throwable) {
-                                start { s.onError(e) }
-                            }
-                        })
+                    plane.start {
+                        action(AsyncSubscriberOnYSubscriber(s, plane))
                     }
                 }
             }
         }
 
         @JvmStatic
-        fun <R> asyncFlow(plane: YPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFlow<R> {
+        fun <R> asyncFlow(plane: AsyncPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFlow<R> {
             return object : YFlow<R> {
                 override fun subscribe(s: YSubscriber<R>) {
                     plane.submit {
-                        action(object : AsyncSubscriber<R> {
-                            override fun onAsyncSubscribe(subscription: YSubscription) {
-                                start { s.onSubscribe(subscription) }
-                            }
-
-                            override fun onAsyncValue(v: R) {
-                                start { s.onValue(v) }
-                            }
-
-                            override fun onAsyncComplete() {
-                                start { s.onComplete() }
-                            }
-
-                            override fun onAsyncError(e: Throwable) {
-                                start { s.onError(e) }
-                            }
-                        })
+                        action(AsyncSubscriberOnYSubscriber(s, plane))
                     }
                 }
             }
         }
     }
 }
+
