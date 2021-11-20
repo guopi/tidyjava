@@ -47,3 +47,7 @@ fun interface YSubscription {
     }
 }
 
+typealias FnOnValue<T> = (v: T) -> Unit
+typealias FnOnComplete = () -> Unit
+typealias FnOnError = (e: Throwable) -> Unit
+

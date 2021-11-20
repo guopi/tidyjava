@@ -13,7 +13,9 @@ class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
     private enum class ResultType { NO, VALUE, COMPLETE, ERROR }
 
     init {
-        source.subscribe(this)
+        Y.start {
+            source.subscribe(this)
+        }
     }
 
     @MustCallInMainPlane
