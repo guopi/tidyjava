@@ -1,16 +1,16 @@
 package pro.guopi.tidy.op
 
-import pro.guopi.tidy.YFuture
+import pro.guopi.tidy.YWish
 import pro.guopi.tidy.YSubscriber
 
-fun <T> YFuture<T>.filter(filter: (T) -> Boolean): YFuture<T> {
-    return FutureFilter(this, filter)
+fun <T> YWish<T>.filter(filter: (T) -> Boolean): YWish<T> {
+    return WishFilter(this, filter)
 }
 
-class FutureFilter<T>(
-    val source: YFuture<T>,
+class WishFilter<T>(
+    val source: YWish<T>,
     val filter: (T) -> Boolean
-) : YFuture<T> {
+) : YWish<T> {
     override fun subscribe(ys: YSubscriber<T>) {
         source.subscribe(object : FilterSubscriber<T, T>(ys) {
             override fun onValue(v: T) {

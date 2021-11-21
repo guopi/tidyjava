@@ -2,17 +2,17 @@
 
 package pro.guopi.tidy.op
 
-import pro.guopi.tidy.YFuture
+import pro.guopi.tidy.YWish
 import pro.guopi.tidy.YSubscriber
 
-fun <T, R> YFuture<T>.mapNotNull(mapper: (T) -> R): YFuture<R> {
-    return FutureMapNotNull(this, mapper)
+fun <T, R> YWish<T>.mapNotNull(mapper: (T) -> R): YWish<R> {
+    return WishMapNotNull(this, mapper)
 }
 
-class FutureMapNotNull<T, R>(
-    val source: YFuture<T>,
+class WishMapNotNull<T, R>(
+    val source: YWish<T>,
     val mapper: (T) -> R?
-) : YFuture<R> {
+) : YWish<R> {
     override fun subscribe(ys: YSubscriber<R>) {
         source.subscribe(object : FilterSubscriber<T, R>(ys) {
             override fun onValue(v: T) {

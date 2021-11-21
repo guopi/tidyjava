@@ -4,21 +4,21 @@ package pro.guopi.tidy.op
 
 import pro.guopi.tidy.*
 
-fun <T, R> YFuture<T>.flatMap(mapper: (T) -> YFuture<R>): YFuture<R> {
-    return FutureFlatMap(this, mapper)
+fun <T, R> YWish<T>.flatMap(mapper: (T) -> YWish<R>): YWish<R> {
+    return WishFlatMap(this, mapper)
 }
 
-class FutureFlatMap<T, R>(
-    val source: YFuture<T>,
-    val mapper: (T) -> YFuture<R>
-) : YFuture<R> {
+class WishFlatMap<T, R>(
+    val source: YWish<T>,
+    val mapper: (T) -> YWish<R>
+) : YWish<R> {
     override fun subscribe(ys: YSubscriber<R>) {
         source.subscribe(UpSubscriber(ys, this.mapper))
     }
 
     private class UpSubscriber<T, R>(
         downstream: YSubscriber<R>,
-        private val mapper: (T) -> YFuture<R>
+        private val mapper: (T) -> YWish<R>
     ) : FilterSubscriber<T, R>(downstream) {
         private var childStream: YSubscription? = null
 

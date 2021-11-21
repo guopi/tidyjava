@@ -8,7 +8,7 @@ fun <T, R> YFlow<T>.flatMap(mapper: (T) -> YFlow<R>): YFlow<R> {
 
 class FlowFlatMap<T, R>(
     val source: YFlow<T>,
-    val mapper: (T) -> YFuture<R>
+    val mapper: (T) -> YWish<R>
 ) : YFlow<R> {
     override fun subscribe(ys: YSubscriber<R>) {
         source.subscribe(UpSubscriber(ys, this.mapper))
@@ -16,7 +16,7 @@ class FlowFlatMap<T, R>(
 
     private class UpSubscriber<T, R>(
         downstream: YSubscriber<R>,
-        private val mapper: (T) -> YFuture<R>
+        private val mapper: (T) -> YWish<R>
     ) : FilterSubscriber<T, R>(downstream) {
 
         override fun onValue(v: T) {

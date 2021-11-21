@@ -9,7 +9,7 @@ import java.lang.annotation.Inherited
 @Inherited
 annotation class MustCallInMainPlane
 
-fun interface YFuture<T> {
+fun interface YWish<T> {
     @MustCallInMainPlane
     fun subscribe(ys: YSubscriber<T>)
 }

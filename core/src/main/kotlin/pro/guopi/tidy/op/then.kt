@@ -2,7 +2,7 @@ package pro.guopi.tidy.op
 
 import pro.guopi.tidy.*
 
-fun <T> YFuture<T>.subscribe(
+fun <T> YWish<T>.subscribe(
     onSubscribe: FnOnSubscribe? = null,
     onValue: FnOnValue<T>? = null,
     onComplete: FnOnComplete? = null,

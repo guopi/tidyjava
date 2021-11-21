@@ -1,10 +1,29 @@
 package pro.guopi.tidy
 
-fun <T> YFuture<T>.promise(): YPromise<T> {
-    return YPromise(this)
+fun <T> YWish<T>.promise(): YPromise<T> {
+    return PromiseOnWish(this)
 }
 
-class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
+
+interface YPromise<T> {
+    fun <R> map(onSuccess: (T) -> R, onError: ((Throwable) -> R)? = null): YPromise<R>
+    fun <R> flatMap(onSuccess: (T) -> YPromise<R>, onError: ((Throwable) -> YPromise<R>)? = null): YPromise<R>
+    fun <R> mapError(onError: ((Throwable) -> R)? = null): YPromise<R>
+    fun <R> flatMapError(onError: ((Throwable) -> YPromise<R>)? = null): YPromise<R>
+
+    companion object {
+        @JvmStatic
+        fun <T> create(action: FnPromiseCreateAction<T>): YPromise<T> {
+
+        }
+    }
+}
+
+typealias FnPromiseOnSuccess<T> = (T) -> Unit
+typealias FnPromiseOnError = (Throwable) -> Unit
+typealias FnPromiseCreateAction<T> = (onSuccess: FnPromiseOnSuccess<T>, onError: FnPromiseOnError) -> Unit
+
+class PromiseOnWish<T>(wish: YWish<T>) : YPromise<T>, YSubscriber<T> {
     private var upstream: YSubscription? = null
     private var result: Any? = null     // V | Throwable
     private var resultType = ResultType.NO
@@ -16,7 +35,7 @@ class YPromise<T>(source: YFuture<T>) : YFuture<T>, YSubscriber<T> {
 
     init {
         Y.runInMainPlane {
-            source.subscribe(this)
+            wish.subscribe(this)
         }
     }
 

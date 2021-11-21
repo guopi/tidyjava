@@ -4,14 +4,14 @@ package pro.guopi.tidy.op
 
 import pro.guopi.tidy.*
 
-fun <T, R> YFuture<T>.map(mapper: (T) -> R): YFuture<R> {
-    return FutureMap(this, mapper)
+fun <T, R> YWish<T>.map(mapper: (T) -> R): YWish<R> {
+    return WishMap(this, mapper)
 }
 
-class FutureMap<T, R>(
-    val source: YFuture<T>,
+class WishMap<T, R>(
+    val source: YWish<T>,
     val mapper: (T) -> R
-) : YFuture<R> {
+) : YWish<R> {
     override fun subscribe(ys: YSubscriber<R>) {
         source.subscribe(object : FilterSubscriber<T,R>(ys){
             override fun onValue(v: T) {
