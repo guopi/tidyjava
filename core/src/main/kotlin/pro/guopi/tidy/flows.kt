@@ -9,11 +9,6 @@ import java.lang.annotation.Inherited
 @Inherited
 annotation class MustCallInMainPlane
 
-fun interface YWish<T> {
-    @MustCallInMainPlane
-    fun subscribe(ys: YSubscriber<T>)
-}
-
 fun interface YFlow<T> {
     @MustCallInMainPlane
     fun subscribe(ys: YSubscriber<T>)
@@ -48,5 +43,5 @@ fun interface YSubscription {
 typealias FnOnSubscribe = (ss: YSubscription) -> Unit
 typealias FnOnValue<T> = (v: T) -> Unit
 typealias FnOnComplete = () -> Unit
-typealias FnOnError = (e: Throwable) -> Unit
+typealias FnOnError = (Throwable) -> Unit
 

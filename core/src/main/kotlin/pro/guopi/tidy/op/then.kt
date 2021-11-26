@@ -2,17 +2,6 @@ package pro.guopi.tidy.op
 
 import pro.guopi.tidy.*
 
-fun <T> YWish<T>.subscribe(
-    onSubscribe: FnOnSubscribe? = null,
-    onValue: FnOnValue<T>? = null,
-    onComplete: FnOnComplete? = null,
-    onError: FnOnError? = null
-) {
-    Y.runInMainPlane {
-        this.subscribe(LambdaSubscriber(onSubscribe, onValue, onComplete, onError))
-    }
-}
-
 fun <T> YFlow<T>.subscribe(
     onSubscribe: FnOnSubscribe? = null,
     onValue: FnOnValue<T>? = null,

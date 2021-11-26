@@ -34,8 +34,8 @@ class Y {
 
 
         @JvmStatic
-        fun <R> asyncWish(plane: AsyncPlane, action: () -> R): YWish<R> {
-            return asyncWish(plane) { s ->
+        fun <R> asyncRun(plane: AsyncPlane, action: () -> R): Promise<R> {
+            return asyncRun(plane) { s ->
                 try {
                     val r = action()
                     s.onAsyncValue(r)
@@ -46,10 +46,10 @@ class Y {
         }
 
         @JvmStatic
-        fun <R> asyncWish(
+        fun <R> asyncRun(
             plane: AsyncPlane,
-            action: (asyncSubscriber: AsyncSubscriber<R>) -> Unit
-        ): YWish<R> {
+            action: FnPromiseCreateAction<R>
+        ): Promise<R> {
             return YWish { ys ->
                 AsyncTask(plane, ys, action).submit()
             }
