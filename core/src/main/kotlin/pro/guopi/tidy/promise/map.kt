@@ -8,7 +8,7 @@ fun <T, R> Promise<T>.map(onSuccess: (T) -> R, onError: ((Throwable) -> R)? = nu
         return fast
 
     val ret = StdPromise<R>()
-    Y.runInMainPlane {
+    Tidy.runInMainPlane {
         this.subscribe(object : PromiseSubscriber<T> {
             override fun onSuccess(value: T) {
                 val r = try {

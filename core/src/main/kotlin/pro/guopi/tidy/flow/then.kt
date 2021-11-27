@@ -8,7 +8,7 @@ fun <T> YFlow<T>.subscribe(
     onComplete: FnOnComplete? = null,
     onError: FnOnError? = null
 ) {
-    Y.runInMainPlane {
+    Tidy.runInMainPlane {
         this.subscribe(LambdaSubscriber(onSubscribe, onValue, onComplete, onError))
     }
 }

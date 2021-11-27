@@ -5,7 +5,7 @@ import pro.guopi.tidy.promise.AsyncPromiseTask
 import pro.guopi.tidy.promise.StdPromise
 import java.util.concurrent.TimeUnit
 
-class Y {
+class Tidy {
     companion object {
         @JvmStatic
         private val main = ThreadPool("Tidy-Main", 1, 1)

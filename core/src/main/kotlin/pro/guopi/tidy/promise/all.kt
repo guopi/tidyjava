@@ -2,11 +2,11 @@ package pro.guopi.tidy.promise
 
 import pro.guopi.tidy.Promise
 import pro.guopi.tidy.PromiseSubscriber
-import pro.guopi.tidy.Y
+import pro.guopi.tidy.Tidy
 
 fun <T> Promise.Companion.all(vararg promises: Promise<T>): Promise<Array<T>> {
     val ret = StdPromise<Array<T>>()
-    Y.runInMainPlane {
+    Tidy.runInMainPlane {
         val values = arrayOfNulls<Any>(promises.size)
         var runningCount = promises.size    // -1 means error
 

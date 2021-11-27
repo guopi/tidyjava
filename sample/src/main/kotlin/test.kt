@@ -1,8 +1,8 @@
-import pro.guopi.tidy.Y
+import pro.guopi.tidy.Tidy
 
 fun fromOtherThread() {
     //...
-    Y.runInMainPlane {
+    Tidy.runInMainPlane {
         //...
     }
 }

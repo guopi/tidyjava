@@ -32,7 +32,7 @@ interface Promise<out T> {
         @JvmStatic
         fun <T> create(action: (PromiseSubscriber<T>) -> Unit): Promise<T> {
             val promise = StdPromise<T>()
-            Y.runInMainPlane {
+            Tidy.runInMainPlane {
                 action(promise)
             }
             return promise

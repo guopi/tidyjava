@@ -74,7 +74,7 @@ class AsyncTask<T>(
     @CallInAnyPlane
     fun submit() {
         submitted = plane.submit(this)
-        Y.runInMainPlane {
+        Tidy.runInMainPlane {
             ys.onSubscribe(this)
         }
     }
@@ -83,20 +83,20 @@ class AsyncTask<T>(
     override fun onAsyncValue(v: T) {
         if (get()) return
 
-        Y.runInMainPlane { ys.onValue(v) }
+        Tidy.runInMainPlane { ys.onValue(v) }
     }
 
     @MustCallInAsyncPlane
     override fun onAsyncComplete() {
         if (get()) return
 
-        Y.runInMainPlane { ys.onComplete() }
+        Tidy.runInMainPlane { ys.onComplete() }
     }
 
     @MustCallInAsyncPlane
     override fun onAsyncError(e: Throwable) {
         if (get()) return
 
-        Y.runInMainPlane { ys.onError(e) }
+        Tidy.runInMainPlane { ys.onError(e) }
     }
 }

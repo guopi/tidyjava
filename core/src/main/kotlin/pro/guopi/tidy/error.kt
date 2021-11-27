@@ -55,7 +55,7 @@ object YErrors {
 
     @JvmStatic
     internal fun uncaught(error: Throwable) {
-        Y.io.start {
+        Tidy.io.start {
             error.printStackTrace()
         }
 

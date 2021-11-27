@@ -18,14 +18,14 @@ class AsyncPromiseTask<T>(
 
     @MustCallInAsyncPlane
     override fun onAsyncValue(v: T) {
-        Y.runInMainPlane {
+        Tidy.runInMainPlane {
             mainSubscriber.onSuccess(v)
         }
     }
 
     @MustCallInAsyncPlane
     override fun onAsyncError(e: Throwable) {
-        Y.runInMainPlane {
+        Tidy.runInMainPlane {
             mainSubscriber.onError(e)
         }
     }
