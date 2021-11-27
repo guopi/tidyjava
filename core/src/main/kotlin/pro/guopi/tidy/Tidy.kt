@@ -8,20 +8,20 @@ import java.util.concurrent.TimeUnit
 class Tidy {
     companion object {
         @JvmStatic
-        private val main = ThreadPool("Tidy-Main", 1, 1)
+        private val main = BasePlane("Tidy-Main", 1, 1)
 
         @JvmStatic
-        val io = SchedulerThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
+        val io = AsyncThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
 
         @JvmStatic
-        val computation = SchedulerThreadPoolPlane(
+        val computation = AsyncThreadPoolPlane(
             "Tidy-Comp",
             0, Runtime.getRuntime().availableProcessors()
         )
 
         @JvmStatic
         fun isInMainPlane(): Boolean {
-            return main.isRunningInPool()
+            return main.isInPlane()
         }
 
         /**
@@ -29,7 +29,7 @@ class Tidy {
          */
         @JvmStatic
         fun runInMainPlane(action: Runnable) {
-            main.safeRunInPool(action)
+            main.safeRunInPlane(action)
         }
 
         @JvmStatic

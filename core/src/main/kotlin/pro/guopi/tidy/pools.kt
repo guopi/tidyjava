@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 
-open class ThreadPool(
+open class BasePlane(
     val name: String, minThreadCount: Int, maxThreadCount: Int,
 ) : ThreadFactory {
     val group = ThreadGroup(name)
@@ -17,7 +17,7 @@ open class ThreadPool(
             it.maximumPoolSize = maxThreadCount
         }
 
-    fun isRunningInPool(): Boolean {
+    fun isInPlane(): Boolean {
         return Thread.currentThread().threadGroup === group
     }
 
@@ -26,17 +26,8 @@ open class ThreadPool(
     }
 
     @CallInAnyPlane
-    fun safeRunInPool(action: () -> Unit) {
-        if (isRunningInPool()) {
-            safeRun(action)
-        } else {
-            pool.execute(SafeRunnable(action))
-        }
-    }
-
-    @CallInAnyPlane
-    fun safeRunInPool(action: Runnable) {
-        if (isRunningInPool()) {
+    fun safeRunInPlane(action: Runnable) {
+        if (isInPlane()) {
             safeRun(action)
         } else {
             pool.execute(SafeRunnable(action))
@@ -49,12 +40,13 @@ open class ThreadPool(
     }
 }
 
-class SchedulerThreadPoolPlane(
+class AsyncThreadPoolPlane(
     name: String, minThreadCount: Int, maxThreadCount: Int,
-) : AsyncPlane, ThreadPool(name, minThreadCount, maxThreadCount) {
+) : AsyncPlane, BasePlane(name, minThreadCount, maxThreadCount) {
+
     @CallInAnyPlane
     override fun start(action: Runnable) {
-        safeRunInPool(action)
+        safeRunInPlane(action)
     }
 
     @CallInAnyPlane
