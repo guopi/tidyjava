@@ -1,6 +1,7 @@
 package pro.guopi.tidy.promise
 
 import pro.guopi.tidy.*
+import pro.guopi.tidy.Tidy.Companion.main
 
 class AsyncPromiseTask<T>(
     private val mainSubscriber: PromiseSubscriber<T>,
@@ -18,14 +19,14 @@ class AsyncPromiseTask<T>(
 
     @MustCallInAsyncPlane
     override fun onAsyncValue(v: T) {
-        Tidy.runInMainPlane {
+        main.start {
             mainSubscriber.onSuccess(v)
         }
     }
 
     @MustCallInAsyncPlane
     override fun onAsyncError(e: Throwable) {
-        Tidy.runInMainPlane {
+        main.start {
             mainSubscriber.onError(e)
         }
     }

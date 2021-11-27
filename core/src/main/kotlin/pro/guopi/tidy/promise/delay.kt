@@ -8,16 +8,16 @@ import java.util.concurrent.TimeUnit
 fun <T> Promise<T>.delay(delay: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): Promise<T> {
     val ret = StdPromise<T>()
 
-    Tidy.runInMainPlane {
+    Tidy.main.start {
         this.subscribe(object : PromiseSubscriber<T> {
             override fun onSuccess(value: T) {
-                Tidy.runDelay(delay, unit) {
+                Tidy.main.startDelay(delay, unit) {
                     ret.onSuccess(value)
                 }
             }
 
             override fun onError(error: Throwable) {
-                Tidy.runDelay(delay, unit) {
+                Tidy.main.startDelay(delay, unit) {
                     ret.onError(error)
                 }
             }

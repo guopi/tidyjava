@@ -1,79 +1,48 @@
 package pro.guopi.tidy
 
-import pro.guopi.tidy.promise.AsyncPromiseSubscriber
-import pro.guopi.tidy.promise.AsyncPromiseTask
-import pro.guopi.tidy.promise.StdPromise
-import java.util.concurrent.TimeUnit
+import pro.guopi.tidy.plane.AsyncThreadPoolPlane
+import pro.guopi.tidy.plane.MainThreadPoolPlane
 
 class Tidy {
     companion object {
         @JvmStatic
-        private val main = BasePlane("Tidy-Main", 1, 1)
+        val main: MainPlane = MainThreadPoolPlane()
 
         @JvmStatic
-        val io = AsyncThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
+        val io: AsyncPlane = AsyncThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
 
         @JvmStatic
-        val computation = AsyncThreadPoolPlane(
+        val computation: AsyncPlane = AsyncThreadPoolPlane(
             "Tidy-Comp",
             0, Runtime.getRuntime().availableProcessors()
         )
 
         @JvmStatic
-        fun isInMainPlane(): Boolean {
-            return main.isInPlane()
-        }
+        private var ON_ERROR_DEFAULT: FnOnError = ::uncaught
 
-        /**
-         * run action in main plane
-         */
         @JvmStatic
-        fun runInMainPlane(action: Runnable) {
-            main.safeRunInPlane(action)
+        fun setOnError(onError: FnOnError) {
+            ON_ERROR_DEFAULT = onError
         }
 
         @JvmStatic
-        fun runLater(action: () -> Unit) {
-            main.safeSchedule(0, TimeUnit.NANOSECONDS, action)
+        fun <R> handleErrorUse(onError: ((Throwable) -> R)?, error: Throwable) {
+            (onError ?: ON_ERROR_DEFAULT)(error)
         }
 
         @JvmStatic
-        fun runDelay(delay: Long, unit: TimeUnit, action: Runnable) {
-            main.safeSchedule(delay, unit, action)
+        fun onError(error: Throwable) {
+            ON_ERROR_DEFAULT(error)
         }
 
         @JvmStatic
-        fun <R> asyncRun(plane: AsyncPlane, action: () -> R): Promise<R> {
-            return asyncRun(plane) { s ->
-                try {
-                    val r = action()
-                    s.onAsyncValue(r)
-                } catch (e: Throwable) {
-                    s.onAsyncError(e)
-                }
+        private fun uncaught(error: Throwable) {
+            io.start {
+                error.printStackTrace()
             }
-        }
 
-        @JvmStatic
-        fun <R> asyncRun(
-            plane: AsyncPlane,
-            action: (AsyncPromiseSubscriber<R>) -> Unit,
-        ): Promise<R> {
-            val promise = StdPromise<R>()
-            AsyncPromiseTask(promise, action).submit(plane)
-            return promise
-        }
-
-        @JvmStatic
-        fun <R> asyncFlow(plane: AsyncPlane, action: (s: AsyncSubscriber<R>) -> Unit): YFlow<R> {
-            return YFlow<R> { ys ->
-                AsyncTask(plane, ys, action).submit()
-            }
-        }
-
-        @JvmStatic
-        fun setMaxComputationThreadCount(max: Int) {
-            computation.setMaxThreadCount(max)
+            val thread = Thread.currentThread()
+            thread.uncaughtExceptionHandler.uncaughtException(thread, error)
         }
     }
 }

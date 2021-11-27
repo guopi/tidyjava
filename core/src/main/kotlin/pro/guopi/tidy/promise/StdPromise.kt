@@ -2,7 +2,7 @@ package pro.guopi.tidy.promise
 
 import pro.guopi.tidy.Promise
 import pro.guopi.tidy.PromiseSubscriber
-import pro.guopi.tidy.YErrors
+import pro.guopi.tidy.Tidy
 
 class StdPromise<T> : Promise<T>, PromiseSubscriber<T> {
     private var result: Any? = null     // T | Throwable
@@ -20,7 +20,7 @@ class StdPromise<T> : Promise<T>, PromiseSubscriber<T> {
                     @Suppress("UNCHECKED_CAST")
                     subscriber.onSuccess(result as T)
                 } catch (e: Throwable) {
-                    YErrors.ON_ERROR_DEFAULT(e)
+                    Tidy.onError(e)
                 }
             }
             State.ERROR -> {
@@ -28,7 +28,7 @@ class StdPromise<T> : Promise<T>, PromiseSubscriber<T> {
                     @Suppress("UNCHECKED_CAST")
                     subscriber.onError(result as Throwable)
                 } catch (e: Throwable) {
-                    YErrors.ON_ERROR_DEFAULT(e)
+                    Tidy.onError(e)
                 }
             }
             State.RUNNING -> {
@@ -89,7 +89,7 @@ class StdPromise<T> : Promise<T>, PromiseSubscriber<T> {
             this.result = result
             this.state = state
         } else {
-            YErrors.handleError(IllegalStateException("Result already set!"))
+            Tidy.onError(IllegalStateException("Result already set!"))
         }
     }
 }

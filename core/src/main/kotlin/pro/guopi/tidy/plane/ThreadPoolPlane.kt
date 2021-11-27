@@ -1,14 +1,17 @@
-package pro.guopi.tidy
+package pro.guopi.tidy.plane
 
+import pro.guopi.tidy.CallInAnyPlane
+import pro.guopi.tidy.Plane
+import pro.guopi.tidy.SafeRunnable
+import pro.guopi.tidy.runOrHandleError
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-
-open class BasePlane(
+open class ThreadPoolPlane(
     val name: String, minThreadCount: Int, maxThreadCount: Int,
-) : ThreadFactory {
+) : ThreadFactory, Plane {
     val group = ThreadGroup(name)
     private val threadSN = AtomicInteger()
 
@@ -26,38 +29,16 @@ open class BasePlane(
     }
 
     @CallInAnyPlane
-    fun safeRunInPlane(action: Runnable) {
+    override fun start(action: Runnable) {
         if (isInPlane()) {
-            safeRun(action)
+            runOrHandleError(action)
         } else {
             pool.execute(SafeRunnable(action))
         }
     }
 
     @CallInAnyPlane
-    fun safeSchedule(delay: Long, unit: TimeUnit, action: Runnable) {
+    override fun startDelay(delay: Long, unit: TimeUnit, action: Runnable) {
         pool.schedule(SafeRunnable(action), delay, unit)
-    }
-}
-
-class AsyncThreadPoolPlane(
-    name: String, minThreadCount: Int, maxThreadCount: Int,
-) : AsyncPlane, BasePlane(name, minThreadCount, maxThreadCount) {
-
-    @CallInAnyPlane
-    override fun start(action: Runnable) {
-        safeRunInPlane(action)
-    }
-
-    @CallInAnyPlane
-    override fun submit(action: Runnable): AsyncSubscription {
-        val f = pool.submit(SafeRunnable(action))
-        return AsyncSubscription {
-            f.cancel(false)
-        }
-    }
-
-    fun setMaxThreadCount(max: Int) {
-        pool.maximumPoolSize = max
     }
 }

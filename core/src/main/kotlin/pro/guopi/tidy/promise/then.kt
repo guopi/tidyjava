@@ -2,7 +2,7 @@ package pro.guopi.tidy.promise
 
 import pro.guopi.tidy.Promise
 import pro.guopi.tidy.PromiseSubscriber
-import pro.guopi.tidy.Tidy
+import pro.guopi.tidy.Tidy.Companion.main
 
 fun <T, R> Promise<T>.then(
     onSuccess: (T) -> Promise<R>,
@@ -13,7 +13,7 @@ fun <T, R> Promise<T>.then(
         return fast
 
     val ret = StdPromise<R>()
-    Tidy.runInMainPlane {
+    main.start {
         this.subscribe(object : PromiseSubscriber<T> {
             override fun onSuccess(value: T) {
                 val r = try {

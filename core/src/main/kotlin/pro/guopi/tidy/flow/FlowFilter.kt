@@ -1,26 +1,26 @@
 package pro.guopi.tidy.flow
 
-import pro.guopi.tidy.YFlow
-import pro.guopi.tidy.YSubscriber
-import pro.guopi.tidy.handleError
+import pro.guopi.tidy.Flow
+import pro.guopi.tidy.FSubscriber
+import pro.guopi.tidy.safeOnError
 
-fun <T> YFlow<T>.filter(filter: (T) -> Boolean): YFlow<T> {
+fun <T> Flow<T>.filter(filter: (T) -> Boolean): Flow<T> {
     return FlowFilter(this, filter)
 }
 
 class FlowFilter<T>(
-    val source: YFlow<T>,
+    val source: Flow<T>,
     val filter: (T) -> Boolean
-) : YFlow<T> {
-    override fun subscribe(ys: YSubscriber<T>) {
-        source.subscribe(object : FilterSubscriber<T, T>(ys) {
-            override fun onValue(v: T) {
+) : Flow<T> {
+    override fun subscribe(subscriber: FSubscriber<T>) {
+        source.subscribe(object : FilterSubscriber<T, T>(subscriber) {
+            override fun onValue(value: T) {
                 downStream?.let { down ->
                     try {
-                        if (filter(v))
-                            down.onValue(v)
+                        if (filter(value))
+                            down.onValue(value)
                     } catch (e: Throwable) {
-                        terminateWhenErrorInHandle().handleError(e)
+                        terminateWhenErrorInHandle().safeOnError(e)
                     }
                 }
             }

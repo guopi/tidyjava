@@ -1,8 +1,8 @@
-import pro.guopi.tidy.Tidy
+import pro.guopi.tidy.Tidy.Companion.main
 
 fun fromOtherThread() {
     //...
-    Tidy.runInMainPlane {
-        //...
+    main.start {
+//...
     }
 }

@@ -1,6 +1,7 @@
 package pro.guopi.tidy.promise
 
 import pro.guopi.tidy.*
+import pro.guopi.tidy.Tidy.Companion.main
 
 fun <T, R> Promise<T>.map(onSuccess: (T) -> R, onError: ((Throwable) -> R)? = null): Promise<R> {
     val fast = fastMap(onSuccess, onError)
@@ -8,13 +9,13 @@ fun <T, R> Promise<T>.map(onSuccess: (T) -> R, onError: ((Throwable) -> R)? = nu
         return fast
 
     val ret = StdPromise<R>()
-    Tidy.runInMainPlane {
+    main.start {
         this.subscribe(object : PromiseSubscriber<T> {
             override fun onSuccess(value: T) {
                 val r = try {
                     onSuccess(value)
                 } catch (e: Throwable) {
-                    YErrors.handleError(e)
+                    Tidy.onError(e)
                     return
                 }
                 ret.onSuccess(r)

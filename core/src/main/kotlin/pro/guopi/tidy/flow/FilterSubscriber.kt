@@ -1,23 +1,22 @@
 package pro.guopi.tidy.flow
 
-import pro.guopi.tidy.YErrors
-import pro.guopi.tidy.YSubscriber
-import pro.guopi.tidy.YSubscription
-import pro.guopi.tidy.handleError
+import pro.guopi.tidy.FSubscriber
+import pro.guopi.tidy.FSubscription
+import pro.guopi.tidy.safeOnError
 
 abstract class FilterSubscriber<T, R>(
-    downStream: YSubscriber<R>
-) : YSubscriber<T>, YSubscription {
-    protected var upstream: YSubscription? = null
-    protected var downStream: YSubscriber<R>? = downStream
+    downStream: FSubscriber<R>,
+) : FSubscriber<T>, FSubscription {
+    protected var upstream: FSubscription? = null
+    protected var downStream: FSubscriber<R>? = downStream
 
-    override fun onSubscribe(ss: YSubscription) {
+    override fun onSubscribe(ss: FSubscription) {
         upstream.let { up ->
             if (up === null) {
                 upstream = ss
                 downStream?.onSubscribe(this)
             } else {
-                YErrors.handleSubscriptionAlreadySet(up, ss)
+                FSubscription.handleSubscriptionAlreadySet(up, ss)
             }
         }
     }
@@ -26,29 +25,29 @@ abstract class FilterSubscriber<T, R>(
         terminateWhenUpstreamFinish()?.onComplete()
     }
 
-    override fun onError(e: Throwable) {
-        terminateWhenUpstreamFinish().handleError(e)
+    override fun onError(error: Throwable) {
+        terminateWhenUpstreamFinish().safeOnError(error)
     }
 
     override fun cancel() {
         upstream.let {
-            upstream = YSubscription.TERMINATED
+            upstream = FSubscription.TERMINATED
             downStream = null
             it?.cancel()
         }
     }
 
-    protected open fun terminateWhenUpstreamFinish(): YSubscriber<R>? {
+    protected open fun terminateWhenUpstreamFinish(): FSubscriber<R>? {
         val down = downStream
-        upstream = YSubscription.TERMINATED
+        upstream = FSubscription.TERMINATED
         downStream = null
         return down
     }
 
-    protected open fun terminateWhenErrorInHandle(): YSubscriber<R>? {
+    protected open fun terminateWhenErrorInHandle(): FSubscriber<R>? {
         val up = upstream
         val down = downStream
-        upstream = YSubscription.TERMINATED
+        upstream = FSubscription.TERMINATED
         downStream = null
 
         up?.cancel()

@@ -9,7 +9,7 @@ fun <T> Promise<T>.timeout(delay: Long, unit: TimeUnit = TimeUnit.MILLISECONDS):
     val ret = StdPromise<T>()
     val subscriber = TakeFistSubscriber(ret)
 
-    Tidy.runDelay(delay, unit) {
+    Tidy.main.startDelay(delay, unit) {
         if (subscriber.terminate()) {
             ret.onError(TimeoutException())
         }
