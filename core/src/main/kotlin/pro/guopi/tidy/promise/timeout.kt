@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 fun <T> Promise<T>.timeout(delay: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): Promise<T> {
-    val ret = NormalPromise<T>()
+    val ret = StdPromise<T>()
     val subscriber = TerminatableSubsciber(ret)
 
     Y.runDelay(delay, unit) {

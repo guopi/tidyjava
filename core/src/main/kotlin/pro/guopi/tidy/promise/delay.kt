@@ -6,7 +6,7 @@ import pro.guopi.tidy.Y
 import java.util.concurrent.TimeUnit
 
 fun <T> Promise<T>.delay(delay: Long, unit: TimeUnit = TimeUnit.MILLISECONDS): Promise<T> {
-    val ret = NormalPromise<T>()
+    val ret = StdPromise<T>()
 
     Y.runInMainPlane {
         this.subscribe(object : PromiseSubscriber<T> {

@@ -1,7 +1,7 @@
 package pro.guopi.tidy
 
 import pro.guopi.tidy.promise.ErrorPromise
-import pro.guopi.tidy.promise.NormalPromise
+import pro.guopi.tidy.promise.StdPromise
 import pro.guopi.tidy.promise.SuccessPromise
 
 
@@ -31,7 +31,7 @@ interface Promise<T> {
     companion object {
         @JvmStatic
         fun <T> create(action: (PromiseSubscriber<T>) -> Unit): Promise<T> {
-            val promise = NormalPromise<T>()
+            val promise = StdPromise<T>()
             Y.runInMainPlane {
                 action(promise)
             }

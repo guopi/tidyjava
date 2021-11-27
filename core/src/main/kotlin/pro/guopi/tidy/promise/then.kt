@@ -12,7 +12,7 @@ fun <T, R> Promise<T>.then(
     if (fast !== null)
         return fast
 
-    val ret = NormalPromise<R>()
+    val ret = StdPromise<R>()
     Y.runInMainPlane {
         this.subscribe(object : PromiseSubscriber<T> {
             override fun onSuccess(value: T) {

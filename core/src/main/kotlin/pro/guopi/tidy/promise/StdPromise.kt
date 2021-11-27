@@ -4,7 +4,7 @@ import pro.guopi.tidy.Promise
 import pro.guopi.tidy.PromiseSubscriber
 import pro.guopi.tidy.YErrors
 
-open class NormalPromise<T> : Promise<T>, PromiseSubscriber<T> {
+class StdPromise<T> : Promise<T>, PromiseSubscriber<T> {
     private var result: Any? = null     // T | Throwable
     private var state = State.RUNNING
 

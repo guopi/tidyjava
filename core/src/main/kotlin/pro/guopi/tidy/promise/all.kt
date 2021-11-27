@@ -5,7 +5,7 @@ import pro.guopi.tidy.PromiseSubscriber
 import pro.guopi.tidy.Y
 
 fun <T> Promise.Companion.all(vararg promises: Promise<T>): Promise<Array<T>> {
-    val ret = NormalPromise<Array<T>>()
+    val ret = StdPromise<Array<T>>()
     Y.runInMainPlane {
         val values = arrayOfNulls<Any>(promises.size)
         var runningCount = promises.size    // -1 means error

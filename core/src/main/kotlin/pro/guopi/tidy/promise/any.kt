@@ -5,7 +5,7 @@ import pro.guopi.tidy.PromiseSubscriber
 import pro.guopi.tidy.Y
 
 fun <T> Promise.Companion.first(vararg promises: Promise<T>): Promise<T> {
-    val ret = NormalPromise<T>()
+    val ret = StdPromise<T>()
 
     Y.runInMainPlane {
         var ended = false
