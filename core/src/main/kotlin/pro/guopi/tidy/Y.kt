@@ -1,5 +1,8 @@
 package pro.guopi.tidy
 
+import pro.guopi.tidy.promise.AsyncPromiseSubscriber
+import pro.guopi.tidy.promise.AsyncPromiseTask
+import pro.guopi.tidy.promise.StdPromise
 import java.util.concurrent.TimeUnit
 
 class Y {
@@ -54,11 +57,11 @@ class Y {
         @JvmStatic
         fun <R> asyncRun(
             plane: AsyncPlane,
-            action: FnPromiseCreateAction<R>,
+            action: (AsyncPromiseSubscriber<R>) -> Unit,
         ): Promise<R> {
-            return YWish { ys ->
-                AsyncTask(plane, ys, action).submit()
-            }
+            val promise = StdPromise<R>()
+            AsyncPromiseTask(promise, action).submit(plane)
+            return promise
         }
 
         @JvmStatic

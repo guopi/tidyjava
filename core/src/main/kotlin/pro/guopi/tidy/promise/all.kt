@@ -13,7 +13,7 @@ fun <T> Promise.Companion.all(vararg promises: Promise<T>): Promise<Array<T>> {
         promises.forEachIndexed { index, p ->
             p.subscribe(object : PromiseSubscriber<T> {
                 override fun onSuccess(value: T) {
-                    if (runningCount < 0) // error
+                    if (runningCount <= 0) // error | all end
                         return
                     runningCount--
                     values[index] = value

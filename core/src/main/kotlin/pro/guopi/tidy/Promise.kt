@@ -5,7 +5,7 @@ import pro.guopi.tidy.promise.StdPromise
 import pro.guopi.tidy.promise.SuccessPromise
 
 
-interface PromiseSubscriber<T> {
+interface PromiseSubscriber<in T> {
     @MustCallInMainPlane
     fun onSuccess(value: T)
 
@@ -13,7 +13,7 @@ interface PromiseSubscriber<T> {
     fun onError(error: Throwable)
 }
 
-interface Promise<T> {
+interface Promise<out T> {
     @MustCallInMainPlane
     fun subscribe(subscriber: PromiseSubscriber<T>)
 

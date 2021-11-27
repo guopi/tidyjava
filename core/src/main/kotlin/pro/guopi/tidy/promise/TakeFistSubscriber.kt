@@ -2,10 +2,10 @@ package pro.guopi.tidy.promise
 
 import pro.guopi.tidy.PromiseSubscriber
 
-class TerminatableSubsciber<T>(
+class TakeFistSubscriber<T>(
     val downStream: PromiseSubscriber<T>,
 ) : PromiseSubscriber<T> {
-    var terminated = false
+    private var terminated = false
 
     fun terminate(): Boolean {
         return if (!terminated) {
