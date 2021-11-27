@@ -4,14 +4,14 @@ import pro.guopi.tidy.Promise
 import pro.guopi.tidy.PromiseSubscriber
 import pro.guopi.tidy.YErrors
 
-class NormalPromise<T> : Promise<T>, PromiseSubscriber<T> {
+open class NormalPromise<T> : Promise<T>, PromiseSubscriber<T> {
     private var result: Any? = null     // T | Throwable
     private var state = State.RUNNING
 
     //todo mainPlane FastList
     private val downStreams = ArrayList<PromiseSubscriber<T>>()
 
-    private enum class State { RUNNING, SUCCESS, ERROR }
+    enum class State { RUNNING, SUCCESS, ERROR }
 
     override fun subscribe(subscriber: PromiseSubscriber<T>) {
         when (state) {
@@ -67,11 +67,11 @@ class NormalPromise<T> : Promise<T>, PromiseSubscriber<T> {
         }
     }
 
-    override fun onSuccess(v: T) {
-        onUpstreamEnd(State.SUCCESS, v)
+    override fun onSuccess(value: T) {
+        onUpstreamEnd(State.SUCCESS, value)
 
         downStreams.forEach {
-            it.onSuccess(v)
+            it.onSuccess(value)
         }
         downStreams.clear()
     }

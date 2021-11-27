@@ -10,9 +10,9 @@ fun <T, R> Promise<T>.map(onSuccess: (T) -> R, onError: ((Throwable) -> R)? = nu
     val ret = NormalPromise<R>()
     Y.runInMainPlane {
         this.subscribe(object : PromiseSubscriber<T> {
-            override fun onSuccess(v: T) {
+            override fun onSuccess(value: T) {
                 val r = try {
-                    onSuccess(v)
+                    onSuccess(value)
                 } catch (e: Throwable) {
                     YErrors.handleError(e)
                     return

@@ -12,17 +12,17 @@ fun <T, R> Promise<T>.then(
     if (fast !== null)
         return fast
 
-    val downStream = NormalPromise<R>()
+    val ret = NormalPromise<R>()
     Y.runInMainPlane {
         this.subscribe(object : PromiseSubscriber<T> {
-            override fun onSuccess(v: T) {
+            override fun onSuccess(value: T) {
                 val r = try {
-                    onSuccess(v)
+                    onSuccess(value)
                 } catch (e: Throwable) {
-                    downStream.onError(e)
+                    ret.onError(e)
                     return
                 }
-                r.subscribe(downStream)
+                r.subscribe(ret)
             }
 
             override fun onError(error: Throwable) {
@@ -31,20 +31,20 @@ fun <T, R> Promise<T>.then(
                         val r = try {
                             onError(error)
                         } catch (e: Throwable) {
-                            downStream.onError(e)
+                            ret.onError(e)
                             return
                         }
-                        r.subscribe(downStream)
+                        r.subscribe(ret)
                     } else {
-                        downStream.onError(error)
+                        ret.onError(error)
                     }
                 } catch (e: Throwable) {
-                    downStream.onError(e)
+                    ret.onError(e)
                 }
             }
         })
     }
-    return downStream
+    return ret
 }
 
 fun <T> Promise<T>.errorThen(onError: (Throwable) -> Promise<T>): Promise<T> {

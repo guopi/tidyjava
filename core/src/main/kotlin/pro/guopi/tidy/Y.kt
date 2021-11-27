@@ -30,7 +30,7 @@ class Y {
         }
 
         @JvmStatic
-        fun runInMainPlaneLater(action: () -> Unit) {
+        fun runLater(action: () -> Unit) {
             main.safeSchedule(0, TimeUnit.NANOSECONDS, action)
         }
 

@@ -7,7 +7,7 @@ import pro.guopi.tidy.promise.SuccessPromise
 
 interface PromiseSubscriber<T> {
     @MustCallInMainPlane
-    fun onSuccess(v: T)
+    fun onSuccess(value: T)
 
     @MustCallInMainPlane
     fun onError(error: Throwable)
