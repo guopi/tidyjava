@@ -4,13 +4,14 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 
+
 open class ThreadPool(
     val name: String, minThreadCount: Int, maxThreadCount: Int
 ) : ThreadFactory {
     val group = ThreadGroup(name)
     private val threadSN = AtomicInteger()
 
-    internal val pool = ScheduledThreadPoolExecutor(minThreadCount, this)
+    protected val pool = ScheduledThreadPoolExecutor(minThreadCount, this)
         .also {
             it.maximumPoolSize = maxThreadCount
         }
@@ -22,6 +23,29 @@ open class ThreadPool(
     override fun newThread(r: Runnable): Thread {
         return Thread(group, "$name-${threadSN.getAndIncrement()}")
     }
+
+    @CallInAnyPlane
+    fun safeRunInPool(action: () -> Unit) {
+        if (isRunningInPool()) {
+            safeRun(action)
+        } else {
+            pool.execute(SafeRunnable(action))
+        }
+    }
+
+    @CallInAnyPlane
+    fun safeRunInPool(action: Runnable) {
+        if (isRunningInPool()) {
+            safeRun(action)
+        } else {
+            pool.execute(SafeRunnable(action))
+        }
+    }
+
+    @CallInAnyPlane
+    fun safeRunLater(action: Runnable) {
+        pool.execute(SafeRunnable(action))
+    }
 }
 
 class SchedulerThreadPoolPlane(
@@ -29,12 +53,12 @@ class SchedulerThreadPoolPlane(
 ) : AsyncPlane, ThreadPool(name, minThreadCount, maxThreadCount) {
     @CallInAnyPlane
     override fun start(action: Runnable) {
-        pool.execute(action)
+        safeRunInPool(action)
     }
 
     @CallInAnyPlane
     override fun submit(action: Runnable): AsyncSubscription {
-        val f = pool.submit(action)
+        val f = pool.submit(SafeRunnable(action))
         return AsyncSubscription {
             f.cancel(false)
         }

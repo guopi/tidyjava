@@ -1,7 +1,10 @@
 package pro.guopi.tidy
 
 class Y {
-    companion object : ThreadPool("Tidy-Main", 1, 1) {
+    companion object {
+        @JvmStatic
+        val main = ThreadPool("Tidy-Main", 1, 1)
+
         @JvmStatic
         val io = SchedulerThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
 
@@ -13,25 +16,21 @@ class Y {
 
         @JvmStatic
         fun isInMainPlane(): Boolean {
-            return isRunningInPool()
+            return main.isRunningInPool()
         }
 
         /**
          * run action in main plane
          */
         @JvmStatic
-        fun runInMainPlane(action: () -> Unit) {
-            if (isInMainPlane())
-                action()
-            else
-                pool.execute(action)
+        fun runInMainPlane(action: Runnable) {
+            main.safeRunInPool(action)
         }
 
         @JvmStatic
-        fun submitToMainPlane(action: () -> Unit) {
-            pool.execute(action)
+        fun runInMainPlaneLater(action: () -> Unit) {
+            main.safeRunLater(action)
         }
-
 
         @JvmStatic
         fun <R> asyncRun(plane: AsyncPlane, action: () -> R): Promise<R> {

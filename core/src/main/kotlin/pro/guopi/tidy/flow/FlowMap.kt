@@ -1,16 +1,16 @@
-package pro.guopi.tidy.op
+package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.YFlow
 import pro.guopi.tidy.YSubscriber
 import pro.guopi.tidy.handleError
 
-fun <T, R> YFlow<T>.mapNotNull(mapper: (T) -> R): YFlow<R> {
-    return FlowMapNotNull(this, mapper)
+fun <T, R> YFlow<T>.map(mapper: (T) -> R): YFlow<R> {
+    return FlowMap(this, mapper)
 }
 
-class FlowMapNotNull<T, R>(
+class FlowMap<T, R>(
     val source: YFlow<T>,
-    val mapper: (T) -> R?
+    val mapper: (T) -> R
 ) : YFlow<R> {
     override fun subscribe(ys: YSubscriber<R>) {
         source.subscribe(object : FilterSubscriber<T, R>(ys) {
@@ -18,8 +18,7 @@ class FlowMapNotNull<T, R>(
                 downStream?.let { down ->
                     try {
                         val r = mapper(v)
-                        if (r !== null)
-                            down.onValue(r)
+                        down.onValue(r)
                     } catch (e: Throwable) {
                         terminateWhenErrorInHandle().handleError(e)
                     }
