@@ -1,9 +1,11 @@
 package pro.guopi.tidy
 
+import java.util.concurrent.TimeUnit
+
 class Y {
     companion object {
         @JvmStatic
-        val main = ThreadPool("Tidy-Main", 1, 1)
+        private val main = ThreadPool("Tidy-Main", 1, 1)
 
         @JvmStatic
         val io = SchedulerThreadPoolPlane("Tidy-Io", 0, Int.MAX_VALUE)
@@ -29,7 +31,12 @@ class Y {
 
         @JvmStatic
         fun runInMainPlaneLater(action: () -> Unit) {
-            main.safeRunLater(action)
+            main.safeSchedule(0, TimeUnit.NANOSECONDS, action)
+        }
+
+        @JvmStatic
+        fun runDelay(delay: Long, unit: TimeUnit, action: Runnable) {
+            main.safeSchedule(delay, unit, action)
         }
 
         @JvmStatic
@@ -47,7 +54,7 @@ class Y {
         @JvmStatic
         fun <R> asyncRun(
             plane: AsyncPlane,
-            action: FnPromiseCreateAction<R>
+            action: FnPromiseCreateAction<R>,
         ): Promise<R> {
             return YWish { ys ->
                 AsyncTask(plane, ys, action).submit()

@@ -2,6 +2,7 @@ package pro.guopi.tidy
 
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -43,8 +44,8 @@ open class ThreadPool(
     }
 
     @CallInAnyPlane
-    fun safeRunLater(action: Runnable) {
-        pool.execute(SafeRunnable(action))
+    fun safeSchedule(delay: Long, unit: TimeUnit, action: Runnable) {
+        pool.schedule(SafeRunnable(action), delay, unit)
     }
 }
 
