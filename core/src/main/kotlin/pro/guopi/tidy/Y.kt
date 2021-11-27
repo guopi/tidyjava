@@ -63,10 +63,8 @@ class Y {
 
         @JvmStatic
         fun setMaxComputationThreadCount(max: Int) {
-            computation.pool.maximumPoolSize = max
+            computation.setMaxThreadCount(max)
         }
-
-
     }
 }
 

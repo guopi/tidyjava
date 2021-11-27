@@ -1,6 +1,8 @@
 package pro.guopi.tidy
 
+import pro.guopi.tidy.promise.ErrorPromise
 import pro.guopi.tidy.promise.NormalPromise
+import pro.guopi.tidy.promise.SuccessPromise
 
 
 interface PromiseSubscriber<T> {
@@ -17,12 +19,12 @@ interface Promise<T> {
 
     fun <R> fastMap(
         onSuccess: (T) -> R,
-        onError: ((Throwable) -> R)? = null
+        onError: ((Throwable) -> R)? = null,
     ): Promise<R>? = null
 
     fun <R> fastThen(
         onSuccess: (T) -> Promise<R>,
-        onError: ((Throwable) -> Promise<R>)? = null
+        onError: ((Throwable) -> Promise<R>)? = null,
     ): Promise<R>? = null
 
 
@@ -37,13 +39,13 @@ interface Promise<T> {
         }
 
         @JvmStatic
-        fun <T> success(v: T): Promise<T> {
-            TODO()
+        fun <T> success(value: T): Promise<T> {
+            return SuccessPromise(value)
         }
 
         @JvmStatic
-        fun <T> error(e: Throwable): Promise<T> {
-            TODO()
+        fun <T> error(error: Throwable): Promise<T> {
+            return ErrorPromise(error)
         }
     }
 }

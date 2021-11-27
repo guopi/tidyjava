@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 open class ThreadPool(
-    val name: String, minThreadCount: Int, maxThreadCount: Int
+    val name: String, minThreadCount: Int, maxThreadCount: Int,
 ) : ThreadFactory {
     val group = ThreadGroup(name)
     private val threadSN = AtomicInteger()
@@ -49,7 +49,7 @@ open class ThreadPool(
 }
 
 class SchedulerThreadPoolPlane(
-    name: String, minThreadCount: Int, maxThreadCount: Int
+    name: String, minThreadCount: Int, maxThreadCount: Int,
 ) : AsyncPlane, ThreadPool(name, minThreadCount, maxThreadCount) {
     @CallInAnyPlane
     override fun start(action: Runnable) {
@@ -62,5 +62,9 @@ class SchedulerThreadPoolPlane(
         return AsyncSubscription {
             f.cancel(false)
         }
+    }
+
+    fun setMaxThreadCount(max: Int) {
+        pool.maximumPoolSize = max
     }
 }
