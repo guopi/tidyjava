@@ -2,25 +2,25 @@ package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.*
 
-fun <T, R> Flow<T>.flatMap(mapper: (T) -> Flow<R>): Flow<R> {
+fun <T, R> Flowable<T>.flatMap(mapper: (T) -> Flowable<R>): Flowable<R> {
     return FlowFlatMap(this, mapper)
 }
 
 class FlowFlatMap<T, R>(
-    val source: Flow<T>,
-    val mapper: (T) -> Flow<R>,
-) : Flow<R> {
+    val source: Flowable<T>,
+    val mapper: (T) -> Flowable<R>,
+) : Flowable<R> {
     override fun subscribe(subscriber: FlowSubscriber<R>) {
         source.subscribe(UpSubscriber(subscriber, this.mapper))
     }
 
     private class UpSubscriber<T, R>(
         downstream: FlowSubscriber<R>,
-        private val mapper: (T) -> Flow<R>,
+        private val mapper: (T) -> Flowable<R>,
     ) : FilterSubscriber<T, R>(downstream) {
 
         override fun onValue(value: T) {
-            downStream?.let { down ->
+            downstream?.let { down ->
                 try {
                     mapper(value).subscribe(ChildSubscriber())
                 } catch (e: Throwable) {
@@ -43,12 +43,12 @@ class FlowFlatMap<T, R>(
         }
 
         private inner class ChildSubscriber : FlowSubscriber<R> {
-            override fun onSubscribe(ss: Subscription) {
+            override fun onSubscribe(subscription: Subscription) {
                 childStream.let { child ->
                     if (child === null) {
-                        childStream = ss
+                        childStream = subscription
                     } else {
-                        Subscription.handleSubscriptionAlreadySet(child, ss)
+                        Subscription.handleSubscriptionAlreadySet(child, subscription)
                     }
                 }
             }

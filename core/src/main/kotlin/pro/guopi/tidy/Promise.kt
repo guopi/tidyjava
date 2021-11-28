@@ -15,17 +15,6 @@ interface Promise<out T> {
     @MustCallInMainPlane
     fun subscribe(subscriber: PromiseSubscriber<T>)
 
-    fun <R> fastMap(
-        onSuccess: (T) -> R,
-        onError: ((Throwable) -> R)? = null,
-    ): Promise<R>? = null
-
-    fun <R> fastThen(
-        onSuccess: (T) -> Promise<R>,
-        onError: ((Throwable) -> Promise<R>)? = null,
-    ): Promise<R>? = null
-
-
     companion object {
         @JvmStatic
         fun <T> create(action: (PromiseSubscriber<T>) -> Unit): Promise<T> {

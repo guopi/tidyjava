@@ -2,7 +2,7 @@ package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.*
 
-fun <T> Flow<T>.subscribe(
+fun <T> Flowable<T>.subscribe(
     onValue: FnOnValue<T>? = null,
     onComplete: FnOnComplete? = null,
     onError: FnOnError? = null,
@@ -28,13 +28,13 @@ class LambdaSubscriber<T>(
         upstream = Subscription.TERMINATED
     }
 
-    override fun onSubscribe(ss: Subscription) {
+    override fun onSubscribe(subscription: Subscription) {
         upstream.let { up ->
             if (up === null) {
-                upstream = ss
-                onSubscribe?.invoke(ss)
+                upstream = subscription
+                onSubscribe?.invoke(subscription)
             } else {
-                Subscription.handleSubscriptionAlreadySet(up, ss)
+                Subscription.handleSubscriptionAlreadySet(up, subscription)
             }
         }
     }

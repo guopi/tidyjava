@@ -1,21 +1,21 @@
 package pro.guopi.tidy.flow
 
-import pro.guopi.tidy.Flow
+import pro.guopi.tidy.Flowable
 import pro.guopi.tidy.FlowSubscriber
 import pro.guopi.tidy.safeOnError
 
-fun <T> Flow<T>.filter(filter: (T) -> Boolean): Flow<T> {
+fun <T> Flowable<T>.filter(filter: (T) -> Boolean): Flowable<T> {
     return FlowFilter(this, filter)
 }
 
 class FlowFilter<T>(
-    val source: Flow<T>,
+    val source: Flowable<T>,
     val filter: (T) -> Boolean
-) : Flow<T> {
+) : Flowable<T> {
     override fun subscribe(subscriber: FlowSubscriber<T>) {
         source.subscribe(object : FilterSubscriber<T, T>(subscriber) {
             override fun onValue(value: T) {
-                downStream?.let { down ->
+                downstream?.let { down ->
                     try {
                         if (filter(value))
                             down.onValue(value)

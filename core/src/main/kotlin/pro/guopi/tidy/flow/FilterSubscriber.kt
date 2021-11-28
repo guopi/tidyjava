@@ -8,15 +8,15 @@ abstract class FilterSubscriber<T, R>(
     downStream: FlowSubscriber<R>,
 ) : FlowSubscriber<T>, Subscription {
     protected var upstream: Subscription? = null
-    protected var downStream: FlowSubscriber<R>? = downStream
+    protected var downstream: FlowSubscriber<R>? = downStream
 
-    override fun onSubscribe(ss: Subscription) {
+    override fun onSubscribe(subscription: Subscription) {
         upstream.let { up ->
             if (up === null) {
-                upstream = ss
-                downStream?.onSubscribe(this)
+                upstream = subscription
+                downstream?.onSubscribe(this)
             } else {
-                Subscription.handleSubscriptionAlreadySet(up, ss)
+                Subscription.handleSubscriptionAlreadySet(up, subscription)
             }
         }
     }
@@ -32,23 +32,23 @@ abstract class FilterSubscriber<T, R>(
     override fun cancel() {
         upstream.let {
             upstream = Subscription.TERMINATED
-            downStream = null
+            downstream = null
             it?.cancel()
         }
     }
 
     protected open fun terminateWhenUpstreamFinish(): FlowSubscriber<R>? {
-        val down = downStream
+        val down = downstream
         upstream = Subscription.TERMINATED
-        downStream = null
+        downstream = null
         return down
     }
 
     protected open fun terminateWhenErrorInHandle(): FlowSubscriber<R>? {
         val up = upstream
-        val down = downStream
+        val down = downstream
         upstream = Subscription.TERMINATED
-        downStream = null
+        downstream = null
 
         up?.cancel()
         return down

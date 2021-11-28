@@ -8,10 +8,6 @@ fun <T, R> Promise<T>.then(
     onSuccess: (T) -> Promise<R>,
     onError: ((Throwable) -> Promise<R>)? = null,
 ): Promise<R> {
-    val fast = fastThen(onSuccess, onError)
-    if (fast !== null)
-        return fast
-
     val ret = StdPromise<R>()
     main.start {
         this.subscribe(object : PromiseSubscriber<T> {

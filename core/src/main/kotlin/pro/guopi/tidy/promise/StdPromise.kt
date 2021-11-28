@@ -37,59 +37,34 @@ class StdPromise<T> : Promise<T>, PromiseSubscriber<T> {
         }
     }
 
-    override fun <R> fastMap(onSuccess: (T) -> R, onError: ((Throwable) -> R)?): Promise<R>? {
-        return when (state) {
-            State.SUCCESS -> {
-                try {
-                    @Suppress("UNCHECKED_CAST")
-                    (Promise.success(onSuccess(result as T)))
-                } catch (e: Throwable) {
-                    return Promise.error(e)
-                }
-            }
-            State.ERROR -> Promise.error(result as Throwable)
-            else -> null
-        }
-    }
-
-    override fun <R> fastThen(onSuccess: (T) -> Promise<R>, onError: ((Throwable) -> Promise<R>)?): Promise<R>? {
-        return when (state) {
-            State.SUCCESS -> {
-                try {
-                    @Suppress("UNCHECKED_CAST")
-                    onSuccess(result as T)
-                } catch (e: Throwable) {
-                    Promise.error(e)
-                }
-            }
-            State.ERROR -> Promise.error(result as Throwable)
-            else -> null
-        }
-    }
-
     override fun onSuccess(value: T) {
-        onUpstreamEnd(State.SUCCESS, value)
-
-        downStreams.forEach {
-            it.onSuccess(value)
+        if (onUpstreamEnd(State.SUCCESS, value)) {
+            downStreams.forEach {
+                it.onSuccess(value)
+            }
+            downStreams.clear()
         }
-        downStreams.clear()
     }
 
     override fun onError(error: Throwable) {
-        onUpstreamEnd(State.ERROR, error)
-        downStreams.forEach {
-            it.onError(error)
+        if (onUpstreamEnd(State.ERROR, error)) {
+            downStreams.forEach {
+                it.onError(error)
+            }
+            downStreams.clear()
         }
-        downStreams.clear()
     }
 
-    private fun onUpstreamEnd(state: State, result: Any?) {
+    private fun onUpstreamEnd(state: State, result: Any?): Boolean {
         if (this.state === State.RUNNING) {
             this.result = result
             this.state = state
+            return true
         } else {
             Tidy.onError(IllegalStateException("Result already set!"))
+            return false
         }
     }
+
+    fun isRunning(): Boolean = state === State.RUNNING
 }

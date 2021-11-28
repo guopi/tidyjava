@@ -17,8 +17,8 @@ interface AsyncFlowSubscriber<in T> {
 }
 
 
-fun <R> AsyncPlane.flow(action: (s: AsyncFlowSubscriber<R>) -> Unit): Flow<R> {
-    return Flow<R> { subscriber ->
+fun <R> AsyncPlane.flow(action: (s: AsyncFlowSubscriber<R>) -> Unit): Flowable<R> {
+    return Flowable<R> { subscriber ->
         AsyncFlowTask(this, subscriber, action).submit()
     }
 }

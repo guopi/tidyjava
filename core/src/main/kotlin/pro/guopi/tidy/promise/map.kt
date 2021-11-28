@@ -4,10 +4,6 @@ import pro.guopi.tidy.*
 import pro.guopi.tidy.Tidy.Companion.main
 
 fun <T, R> Promise<T>.map(onSuccess: (T) -> R, onError: ((Throwable) -> R)? = null): Promise<R> {
-    val fast = fastMap(onSuccess, onError)
-    if (fast !== null)
-        return fast
-
     val ret = StdPromise<R>()
     main.start {
         this.subscribe(object : PromiseSubscriber<T> {

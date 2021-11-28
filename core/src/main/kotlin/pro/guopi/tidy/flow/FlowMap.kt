@@ -1,21 +1,21 @@
 package pro.guopi.tidy.flow
 
-import pro.guopi.tidy.Flow
+import pro.guopi.tidy.Flowable
 import pro.guopi.tidy.FlowSubscriber
 import pro.guopi.tidy.safeOnError
 
-fun <T, R> Flow<T>.map(mapper: (T) -> R): Flow<R> {
+fun <T, R> Flowable<T>.map(mapper: (T) -> R): Flowable<R> {
     return FlowMap(this, mapper)
 }
 
 class FlowMap<T, R>(
-    val source: Flow<T>,
+    val source: Flowable<T>,
     val mapper: (T) -> R
-) : Flow<R> {
+) : Flowable<R> {
     override fun subscribe(subscriber: FlowSubscriber<R>) {
         source.subscribe(object : FilterSubscriber<T, R>(subscriber) {
             override fun onValue(value: T) {
-                downStream?.let { down ->
+                downstream?.let { down ->
                     try {
                         val r = mapper(value)
                         down.onValue(r)
