@@ -5,7 +5,7 @@ import pro.guopi.tidy.PromiseSubscriber
 import pro.guopi.tidy.Tidy.Companion.main
 
 fun <T> Promise.Companion.all(vararg promises: Promise<T>): Promise<Array<T>> {
-    val ret = StdPromise<Array<T>>()
+    val promiseAll = StdPromise<Array<T>>()
     main.start {
         val values = arrayOfNulls<Any>(promises.size)
         var runningCount = promises.size    // -1 means error
@@ -19,16 +19,16 @@ fun <T> Promise.Companion.all(vararg promises: Promise<T>): Promise<Array<T>> {
                     values[index] = value
                     if (runningCount == 0) {
                         @Suppress("UNCHECKED_CAST")
-                        ret.onSuccess(values as Array<T>)
+                        promiseAll.onSuccess(values as Array<T>)
                     }
                 }
 
                 override fun onError(error: Throwable) {
                     runningCount = -1
-                    ret.onError(error)
+                    promiseAll.onError(error)
                 }
             })
         }
     }
-    return ret
+    return promiseAll
 }

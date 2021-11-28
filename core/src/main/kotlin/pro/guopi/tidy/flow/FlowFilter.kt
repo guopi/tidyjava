@@ -1,7 +1,7 @@
 package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.Flow
-import pro.guopi.tidy.FSubscriber
+import pro.guopi.tidy.FlowSubscriber
 import pro.guopi.tidy.safeOnError
 
 fun <T> Flow<T>.filter(filter: (T) -> Boolean): Flow<T> {
@@ -12,7 +12,7 @@ class FlowFilter<T>(
     val source: Flow<T>,
     val filter: (T) -> Boolean
 ) : Flow<T> {
-    override fun subscribe(subscriber: FSubscriber<T>) {
+    override fun subscribe(subscriber: FlowSubscriber<T>) {
         source.subscribe(object : FilterSubscriber<T, T>(subscriber) {
             override fun onValue(value: T) {
                 downStream?.let { down ->

@@ -6,12 +6,9 @@ import pro.guopi.tidy.promise.StdPromise
 import pro.guopi.tidy.promise.SuccessPromise
 
 
-interface PromiseSubscriber<in T> {
+interface PromiseSubscriber<in T> : ErrorSubscriber {
     @MustCallInMainPlane
     fun onSuccess(value: T)
-
-    @MustCallInMainPlane
-    fun onError(error: Throwable)
 }
 
 interface Promise<out T> {

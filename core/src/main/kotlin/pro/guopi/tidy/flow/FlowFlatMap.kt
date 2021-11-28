@@ -10,12 +10,12 @@ class FlowFlatMap<T, R>(
     val source: Flow<T>,
     val mapper: (T) -> Flow<R>,
 ) : Flow<R> {
-    override fun subscribe(subscriber: FSubscriber<R>) {
+    override fun subscribe(subscriber: FlowSubscriber<R>) {
         source.subscribe(UpSubscriber(subscriber, this.mapper))
     }
 
     private class UpSubscriber<T, R>(
-        downstream: FSubscriber<R>,
+        downstream: FlowSubscriber<R>,
         private val mapper: (T) -> Flow<R>,
     ) : FilterSubscriber<T, R>(downstream) {
 
@@ -37,18 +37,18 @@ class FlowFlatMap<T, R>(
             }
         }
 
-        override fun terminateWhenUpstreamFinish(): FSubscriber<R>? {
-            childStream = FSubscription.TERMINATED
+        override fun terminateWhenUpstreamFinish(): FlowSubscriber<R>? {
+            childStream = Subscription.TERMINATED
             return super.terminateWhenUpstreamFinish()
         }
 
-        private inner class ChildSubscriber : FSubscriber<R> {
-            override fun onSubscribe(ss: FSubscription) {
+        private inner class ChildSubscriber : FlowSubscriber<R> {
+            override fun onSubscribe(ss: Subscription) {
                 childStream.let { child ->
                     if (child === null) {
                         childStream = ss
                     } else {
-                        FSubscription.handleSubscriptionAlreadySet(child, ss)
+                        Subscription.handleSubscriptionAlreadySet(child, ss)
                     }
                 }
             }

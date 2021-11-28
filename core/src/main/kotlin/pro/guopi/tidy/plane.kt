@@ -3,6 +3,13 @@ package pro.guopi.tidy
 import java.lang.annotation.Inherited
 import java.util.concurrent.TimeUnit
 
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.SOURCE)
+@MustBeDocumented
+@Inherited
+annotation class MustCallInMainPlane
+
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 @MustBeDocumented
@@ -29,26 +36,12 @@ fun Plane.startLater(action: () -> Unit) {
 
 interface MainPlane : Plane {
     @CallInAnyPlane
-    fun submit(action: Runnable): FSubscription
+    fun submit(action: Runnable): Subscription
 }
 
 interface AsyncPlane : Plane {
     @CallInAnyPlane
     fun submit(action: Runnable): AsyncSubscription
-}
-
-interface AsyncSubscriber<in T> {
-    @MustCallInAsyncPlane
-    fun isCanceled(): Boolean
-
-    @MustCallInAsyncPlane
-    fun onAsyncValue(v: T)
-
-    @MustCallInAsyncPlane
-    fun onAsyncComplete()
-
-    @MustCallInAsyncPlane
-    fun onAsyncError(e: Throwable)
 }
 
 @FunctionalInterface

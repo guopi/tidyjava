@@ -4,7 +4,7 @@ import pro.guopi.tidy.plane.AsyncThreadPoolPlane
 import pro.guopi.tidy.plane.MainThreadPoolPlane
 
 class Tidy {
-    companion object {
+    companion object : ErrorSubscriber{
         @JvmStatic
         val main: MainPlane = MainThreadPoolPlane()
 
@@ -31,7 +31,7 @@ class Tidy {
         }
 
         @JvmStatic
-        fun onError(error: Throwable) {
+        override fun onError(error: Throwable) {
             ON_ERROR_DEFAULT(error)
         }
 

@@ -7,7 +7,7 @@ fun <T> Flow<T>.subscribe(
     onComplete: FnOnComplete? = null,
     onError: FnOnError? = null,
     onSubscribe: FnOnSubscribe? = null,
-): FSubscription {
+): Subscription {
     val lambdaSubscriber = LambdaSubscriber(onSubscribe, onValue, onComplete, onError)
     Tidy.main.start {
         this.subscribe(lambdaSubscriber)
@@ -20,21 +20,21 @@ class LambdaSubscriber<T>(
     private val onValue: FnOnValue<T>?,
     private val onComplete: FnOnComplete?,
     private val onError: FnOnError?,
-) : FSubscriber<T>, FSubscription {
-    private var upstream: FSubscription? = null
+) : FlowSubscriber<T>, Subscription {
+    private var upstream: Subscription? = null
 
     override fun cancel() {
         upstream?.cancel()
-        upstream = FSubscription.TERMINATED
+        upstream = Subscription.TERMINATED
     }
 
-    override fun onSubscribe(ss: FSubscription) {
+    override fun onSubscribe(ss: Subscription) {
         upstream.let { up ->
             if (up === null) {
                 upstream = ss
                 onSubscribe?.invoke(ss)
             } else {
-                FSubscription.handleSubscriptionAlreadySet(up, ss)
+                Subscription.handleSubscriptionAlreadySet(up, ss)
             }
         }
     }

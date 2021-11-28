@@ -1,48 +1,36 @@
 package pro.guopi.tidy
 
-import java.lang.annotation.Inherited
-
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.SOURCE)
-@MustBeDocumented
-@Inherited
-annotation class MustCallInMainPlane
 
 fun interface Flow<T> {
     @MustCallInMainPlane
-    fun subscribe(subscriber: FSubscriber<T>)
+    fun subscribe(subscriber: FlowSubscriber<T>)
 }
 
-interface FSubscriber<in T> {
+interface FlowSubscriber<in T>: ErrorSubscriber {
     @MustCallInMainPlane
-    fun onSubscribe(ss: FSubscription)
+    fun onSubscribe(ss: Subscription)
 
     @MustCallInMainPlane
     fun onValue(value: T)
 
     @MustCallInMainPlane
     fun onComplete()
-
-    @MustCallInMainPlane
-    fun onError(error: Throwable)
 }
 
 @FunctionalInterface
-interface FSubscription {
+interface Subscription {
     @MustCallInMainPlane
     fun cancel()
 
-
     companion object {
-        val TERMINATED = object : FSubscription {
+        val TERMINATED = object : Subscription {
             override fun cancel() {
                 //DO NOTHING
             }
         }
 
         @JvmStatic
-        fun handleSubscriptionAlreadySet(current: FSubscription, new: FSubscription) {
+        fun handleSubscriptionAlreadySet(current: Subscription, new: Subscription) {
             new.cancel()
             if (current !== TERMINATED) {
                 Tidy.onError(IllegalStateException("Subscription already set!"))
@@ -51,7 +39,7 @@ interface FSubscription {
     }
 }
 
-typealias FnOnSubscribe = (ss: FSubscription) -> Unit
+typealias FnOnSubscribe = (ss: Subscription) -> Unit
 typealias FnOnValue<T> = (v: T) -> Unit
 typealias FnOnComplete = () -> Unit
 typealias FnOnError = (Throwable) -> Unit

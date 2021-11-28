@@ -2,11 +2,13 @@
 
 package pro.guopi.tidy
 
-fun FSubscriber<*>?.safeOnError(e: Throwable) {
-    if (this !== null)
-        this.onError(e)
-    else
-        Tidy.onError(e)
+interface ErrorSubscriber {
+    @MustCallInMainPlane
+    fun onError(error: Throwable)
+}
+
+fun ErrorSubscriber?.safeOnError(e: Throwable) {
+    (this ?: Tidy).onError(e)
 }
 
 inline fun runOrHandleError(action: Runnable) {

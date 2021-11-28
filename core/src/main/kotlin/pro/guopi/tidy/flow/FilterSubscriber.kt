@@ -1,22 +1,22 @@
 package pro.guopi.tidy.flow
 
-import pro.guopi.tidy.FSubscriber
-import pro.guopi.tidy.FSubscription
+import pro.guopi.tidy.FlowSubscriber
+import pro.guopi.tidy.Subscription
 import pro.guopi.tidy.safeOnError
 
 abstract class FilterSubscriber<T, R>(
-    downStream: FSubscriber<R>,
-) : FSubscriber<T>, FSubscription {
-    protected var upstream: FSubscription? = null
-    protected var downStream: FSubscriber<R>? = downStream
+    downStream: FlowSubscriber<R>,
+) : FlowSubscriber<T>, Subscription {
+    protected var upstream: Subscription? = null
+    protected var downStream: FlowSubscriber<R>? = downStream
 
-    override fun onSubscribe(ss: FSubscription) {
+    override fun onSubscribe(ss: Subscription) {
         upstream.let { up ->
             if (up === null) {
                 upstream = ss
                 downStream?.onSubscribe(this)
             } else {
-                FSubscription.handleSubscriptionAlreadySet(up, ss)
+                Subscription.handleSubscriptionAlreadySet(up, ss)
             }
         }
     }
@@ -31,23 +31,23 @@ abstract class FilterSubscriber<T, R>(
 
     override fun cancel() {
         upstream.let {
-            upstream = FSubscription.TERMINATED
+            upstream = Subscription.TERMINATED
             downStream = null
             it?.cancel()
         }
     }
 
-    protected open fun terminateWhenUpstreamFinish(): FSubscriber<R>? {
+    protected open fun terminateWhenUpstreamFinish(): FlowSubscriber<R>? {
         val down = downStream
-        upstream = FSubscription.TERMINATED
+        upstream = Subscription.TERMINATED
         downStream = null
         return down
     }
 
-    protected open fun terminateWhenErrorInHandle(): FSubscriber<R>? {
+    protected open fun terminateWhenErrorInHandle(): FlowSubscriber<R>? {
         val up = upstream
         val down = downStream
-        upstream = FSubscription.TERMINATED
+        upstream = Subscription.TERMINATED
         downStream = null
 
         up?.cancel()
