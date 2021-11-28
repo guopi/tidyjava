@@ -2,7 +2,10 @@
 
 package pro.guopi.tidy.flow
 
-import pro.guopi.tidy.*
+import pro.guopi.tidy.FlowSubscriber
+import pro.guopi.tidy.Flowable
+import pro.guopi.tidy.Subscription
+import pro.guopi.tidy.safeOnError
 
 fun <T, R> Flowable<T>.flatMap(
     mapper: (T) -> Flowable<R>,
@@ -10,7 +13,7 @@ fun <T, R> Flowable<T>.flatMap(
     maxConcurrency: Int = Int.MAX_VALUE,
     bufferSize: Int = 256,
 ): Flowable<R> {
-    return FlowFlatMap(this, mapper)
+    return FlowFlatMap(this, mapper, delayErrors, maxConcurrency, bufferSize)
 }
 
 class FlowFlatMap<T, R>(
@@ -32,32 +35,15 @@ class FlowFlatMap<T, R>(
         val delayErrors: Boolean,
         val maxConcurrency: Int,
         val bufferSize: Int,
-    ) : FlowSubscriber<T>, Subscription {
-        var upStream: Subscription? = null
+    ) : WithFlowUpStream<T>(), Subscription {
         var downStream: FlowSubscriber<R>? = downStream
         var firstError: Throwable? = null
 
-        override fun onSubscribe(subscription: Subscription) {
-            upStream.let { up ->
-                if (up === null) {
-                    upStream = subscription
-                    downStream?.onSubscribe(this)
-                } else {
-                    Subscription.cannotOnSubscribe(up, subscription)
-                }
-            }
+        override fun onSubscribeActual() {
+            downStream?.onSubscribe(this)
         }
 
-        private inline fun isTerminatedOrCanceled(): Boolean {
-            return Subscription.isTerminatedOrCanceled(upStream)
-        }
-
-        override fun onError(error: Throwable) {
-            if (isTerminatedOrCanceled()) {
-                Tidy.onError(error)
-                return
-            }
-
+        override fun onErrorActual(error: Throwable) {
             if (delayErrors) {
                 val first = firstError
                 if (first !== null) {
@@ -66,9 +52,8 @@ class FlowFlatMap<T, R>(
                 } else {
                     firstError = error
                 }
-                onUpStreamEnd()
+                tryFinishDownStream()
             } else {
-                upStream = FlowState.TERMINATED
                 downStream.safeOnError(error)
                 downStream = null
                 cancelAllChildren()
@@ -76,27 +61,37 @@ class FlowFlatMap<T, R>(
         }
 
         override fun cancel() {
-            val up = upStream
-            if (up !== FlowState.CANCELED) {
-                upStream = FlowState.CANCELED
+            if (cancelUpStream()) {
                 downStream = null
-                up?.cancel()
+                cancelAllChildren()
+            } else if (upState === FlowState.TERMINATED) {
+                upState = FlowState.CANCELED
                 cancelAllChildren()
             }
         }
 
-        override fun onComplete() {
-            if (upStream !== Subscription.CANCELED) {
-                upStream = Subscription.TERMINATED
-                onUpStreamEnd()
+        override fun onValue(value: T) {
+            doIfSubscribed {
+                val r = try {
+                    mapper(value)
+                } catch (e: Throwable) {
+                    cancelUpStream()
+                    onErrorActual(e)
+                    return
+                }
+                subscribeChild(r)
             }
         }
 
-        private fun onUpStreamEnd() {
-            tryEndDownStream()
+        override fun onCompleteActual() {
+            tryFinishDownStream()
         }
 
-        private fun tryEndDownStream() {
+        private fun subscribeChild(r: Flowable<R>) {
+            TODO("Not yet implemented")
+        }
+
+        private fun tryFinishDownStream() {
             TODO("Not yet implemented")
         }
 
