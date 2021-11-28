@@ -8,16 +8,10 @@ interface Subscription {
     fun cancel()
 
     companion object {
-        val TERMINATED = object : Subscription {
-            override fun cancel() {
-                //DO NOTHING
-            }
-        }
-
         @JvmStatic
-        fun handleSubscriptionAlreadySet(current: Subscription, new: Subscription) {
+        fun cannotOnSubscribe(current: Subscription?, new: Subscription) {
             new.cancel()
-            if (current !== TERMINATED) {
+            if (current !== null) {
                 Tidy.onError(IllegalStateException("Subscription already set!"))
             }
         }

@@ -26,15 +26,10 @@ private class PromiseSubscriberAsFlow<T>(
         terminate().safeOnError(error)
     }
 
-
     private fun terminate(): FlowSubscriber<T>? {
-        return if (downstream !== null) {
-            val down = downstream
-            downstream = null
-            down
-        } else {
-            null
-        }
+        val down = downstream
+        downstream = null
+        return down
     }
 
     override fun cancel() {

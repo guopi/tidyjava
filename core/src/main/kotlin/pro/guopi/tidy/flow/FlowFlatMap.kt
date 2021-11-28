@@ -43,7 +43,7 @@ class FlowFlatMap<T, R>(
                     upStream = subscription
                     downStream?.onSubscribe(this)
                 } else {
-                    Subscription.handleSubscriptionAlreadySet(up, subscription)
+                    Subscription.cannotOnSubscribe(up, subscription)
                 }
             }
         }
@@ -68,7 +68,7 @@ class FlowFlatMap<T, R>(
                 }
                 onUpStreamEnd()
             } else {
-                upStream = Subscription.TERMINATED
+                upStream = FlowState.TERMINATED
                 downStream.safeOnError(error)
                 downStream = null
                 cancelAllChildren()
@@ -77,8 +77,8 @@ class FlowFlatMap<T, R>(
 
         override fun cancel() {
             val up = upStream
-            if (up !== Subscription.CANCELED) {
-                upStream = Subscription.CANCELED
+            if (up !== FlowState.CANCELED) {
+                upStream = FlowState.CANCELED
                 downStream = null
                 up?.cancel()
                 cancelAllChildren()

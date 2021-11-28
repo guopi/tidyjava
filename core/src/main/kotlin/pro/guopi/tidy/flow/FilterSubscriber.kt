@@ -2,57 +2,44 @@ package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.FlowSubscriber
 import pro.guopi.tidy.Subscription
+import pro.guopi.tidy.Tidy
 import pro.guopi.tidy.safeOnError
 
 abstract class FilterSubscriber<T, R>(
     downStream: FlowSubscriber<R>,
-) : FlowSubscriber<T>, Subscription {
-    protected var upStream: Subscription? = null
+) : WithFlowUpStream<T>(), Subscription {
     protected var downStream: FlowSubscriber<R>? = downStream
 
-
-    override fun onSubscribe(subscription: Subscription) {
-        upStream.let { up ->
-            if (up === null) {
-                upStream = subscription
-                downStream?.onSubscribe(this)
-            } else {
-                Subscription.handleSubscriptionAlreadySet(up, subscription)
-            }
-        }
+    override fun onSubscribeActual() {
+        downStream?.onSubscribe(this)
     }
 
-    override fun onComplete() {
-        terminateWhenUpstreamFinish()?.onComplete()
+    protected fun clearDownStream(): FlowSubscriber<R>? {
+        val down = downStream
+        downStream = null
+        return down
     }
 
-    override fun onError(error: Throwable) {
-        terminateWhenUpstreamFinish().safeOnError(error)
+    override fun onCompleteActual() {
+        clearDownStream()?.onComplete()
+    }
+
+    override fun onErrorActual(error: Throwable) {
+        clearDownStream().safeOnError(error)
     }
 
     override fun cancel() {
-        if (downStream !== null) {
-            val up = upStream
-            upStream = Subscription.TERMINATED
+        if (cancelUpStream()) {
             downStream = null
-            up?.cancel()
         }
     }
 
-    protected open fun terminateWhenUpstreamFinish(): FlowSubscriber<R>? {
-        val down = downStream
-        upStream = Subscription.TERMINATED
-        downStream = null
-        return down
-    }
-
-    protected open fun terminateWhenErrorInHandle(): FlowSubscriber<R>? {
-        val up = upStream
-        val down = downStream
-        upStream = Subscription.TERMINATED
-        downStream = null
-
-        up?.cancel()
-        return down
+    protected open fun cancelUpStreamWhenOperator(): FlowSubscriber<R>? {
+        if (!cancelUpStream()) {
+            Tidy.onError(IllegalStateException())
+        }
+        return downStream.also {
+            downStream = null
+        }
     }
 }

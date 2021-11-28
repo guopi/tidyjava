@@ -20,34 +20,32 @@ class LambdaSubscriber<T>(
     private val onValue: FnOnValue<T>?,
     private val onComplete: FnOnComplete?,
     private val onError: FnOnError?,
-) : FlowSubscriber<T>, Subscription {
-    private var upstream: Subscription? = null
+) : WithFlowUpStream<T>(), Subscription {
 
     override fun cancel() {
-        upstream?.cancel()
-        upstream = Subscription.TERMINATED
+        cancelUpStream()
     }
 
-    override fun onSubscribe(subscription: Subscription) {
-        upstream.let { up ->
-            if (up === null) {
-                upstream = subscription
-                onSubscribe?.invoke(subscription)
-            } else {
-                Subscription.handleSubscriptionAlreadySet(up, subscription)
+    override fun onSubscribeActual() {
+        onSubscribe?.invoke(upStream!!)
+    }
+
+    override fun onValue(value: T) {
+        doIfSubscribed {
+            try {
+                onValue?.invoke(value)
+            } catch (e: Throwable) {
+                cancelUpStream()
+                Tidy.handleErrorUse(onError, e)
             }
         }
     }
 
-    override fun onValue(value: T) {
-        onValue?.invoke(value)
-    }
-
-    override fun onComplete() {
+    override fun onCompleteActual() {
         onComplete?.invoke()
     }
 
-    override fun onError(error: Throwable) {
+    override fun onErrorActual(error: Throwable) {
         Tidy.handleErrorUse(onError, error)
     }
 }
