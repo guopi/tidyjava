@@ -3,11 +3,11 @@ package pro.guopi.tidy.flow
 import pro.guopi.tidy.*
 import java.util.concurrent.atomic.AtomicBoolean
 
-class AsyncFlowTask<T>(
+class AsyncBlockFlowTask<T>(
     private val plane: AsyncPlane,
     private val flowSubscriber: FlowSubscriber<T>,
-    private val action: (s: AsyncFlowSubscriber<T>) -> Unit,
-) : AsyncFlowSubscriber<T>, Subscription, AtomicBoolean(), Runnable {
+    private val action: (s: AsyncBlockFlowSubscriber<T>) -> Unit,
+) : AsyncBlockFlowSubscriber<T>, Subscription, AtomicBoolean(), Runnable {
     private var submitted: AsyncSubscription? = null
 
     @MustCallInMainPlane
@@ -29,7 +29,14 @@ class AsyncFlowTask<T>(
     override fun run() {
         if (get()) return
 
-        action(this)
+        try {
+            action(this)
+        } catch (e: Throwable) {
+            (if (isCanceled()) Tidy else flowSubscriber).onError(e)
+            return
+        }
+        if (get()) return
+        flowSubscriber.onComplete()
     }
 
     @MustCallInMainPlane
@@ -43,26 +50,5 @@ class AsyncFlowTask<T>(
         if (get()) return
 
         Tidy.main.start { flowSubscriber.onValue(value) }
-    }
-
-    @MustCallInAsyncPlane
-    override fun onAsyncComplete() {
-        if (get()) return
-
-        Tidy.main.start {
-            flowSubscriber.onComplete()
-        }
-    }
-
-    @MustCallInAsyncPlane
-    override fun onAsyncError(error: Throwable) {
-        if (get()) {
-            Tidy.onError(error)
-            return
-        }
-
-        Tidy.main.start {
-            flowSubscriber.onError(error)
-        }
     }
 }

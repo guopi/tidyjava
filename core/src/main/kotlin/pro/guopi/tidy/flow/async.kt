@@ -7,19 +7,33 @@ interface AsyncFlowSubscriber<in T> {
     fun isCanceled(): Boolean
 
     @MustCallInAsyncPlane
-    fun onAsyncValue(v: T)
+    fun onAsyncValue(value: T)
 
     @MustCallInAsyncPlane
     fun onAsyncComplete()
 
     @MustCallInAsyncPlane
-    fun onAsyncError(e: Throwable)
+    fun onAsyncError(error: Throwable)
+}
+
+interface AsyncBlockFlowSubscriber<in T> {
+    @MustCallInAsyncPlane
+    fun isCanceled(): Boolean
+
+    @MustCallInAsyncPlane
+    fun onAsyncValue(value: T)
 }
 
 
-fun <R> AsyncPlane.flow(action: (s: AsyncFlowSubscriber<R>) -> Unit): Flowable<R> {
+fun <R> AsyncPlane.asyncFlow(action: (s: AsyncFlowSubscriber<R>) -> Unit): Flowable<R> {
     return Flowable<R> { subscriber ->
         AsyncFlowTask(this, subscriber, action).submit()
+    }
+}
+
+fun <R> AsyncPlane.blockFlow(action: (s: AsyncBlockFlowSubscriber<R>) -> Unit): Flowable<R> {
+    return Flowable<R> { subscriber ->
+        AsyncBlockFlowTask(this, subscriber, action).submit()
     }
 }
 
