@@ -42,7 +42,9 @@ class AsyncFlowTask<T>(
     override fun onAsyncValue(value: T) {
         if (get()) return
 
-        Tidy.main.start { flowSubscriber.onValue(value) }
+        Tidy.main.start {
+            flowSubscriber.onValue(value)
+        }
     }
 
     @MustCallInAsyncPlane

@@ -15,7 +15,7 @@ class FlowFilter<T>(
     override fun subscribe(subscriber: FlowSubscriber<T>) {
         source.subscribe(object : FilterSubscriber<T, T>(subscriber) {
             override fun onValue(value: T) {
-                downstream?.let { down ->
+                downStream?.let { down ->
                     try {
                         if (filter(value))
                             down.onValue(value)

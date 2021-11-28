@@ -18,16 +18,9 @@ fun File.readTextPromise(charset: Charset = Charsets.UTF_8): Promise<String> {
     }
 }
 
-fun File.readLinesFlow(charset: Charset = Charsets.UTF_8): Flowable<String> {
-    return Tidy.io.blockFlow { subscriber ->
+fun File.linesFlow(charset: Charset = Charsets.UTF_8): Flowable<String> {
+    return Tidy.io.blockFlow {
         BufferedReader(InputStreamReader(FileInputStream(this), charset))
-            .use { reader ->
-                while (!subscriber.isCanceled()) {
-                    val line = reader.readLine()
-                    if (line === null)
-                        break
-                    subscriber.onAsyncValue(line)
-                }
-            }
+            .blockingReadLines(it)
     }
 }

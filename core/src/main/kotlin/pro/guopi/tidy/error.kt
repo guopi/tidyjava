@@ -24,4 +24,3 @@ class SafeRunnable(val action: Runnable) : Runnable {
         runOrHandleError(action)
     }
 }
-

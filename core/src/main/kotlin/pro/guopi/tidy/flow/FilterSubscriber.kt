@@ -7,14 +7,15 @@ import pro.guopi.tidy.safeOnError
 abstract class FilterSubscriber<T, R>(
     downStream: FlowSubscriber<R>,
 ) : FlowSubscriber<T>, Subscription {
-    protected var upstream: Subscription? = null
-    protected var downstream: FlowSubscriber<R>? = downStream
+    protected var upStream: Subscription? = null
+    protected var downStream: FlowSubscriber<R>? = downStream
+
 
     override fun onSubscribe(subscription: Subscription) {
-        upstream.let { up ->
+        upStream.let { up ->
             if (up === null) {
-                upstream = subscription
-                downstream?.onSubscribe(this)
+                upStream = subscription
+                downStream?.onSubscribe(this)
             } else {
                 Subscription.handleSubscriptionAlreadySet(up, subscription)
             }
@@ -30,25 +31,26 @@ abstract class FilterSubscriber<T, R>(
     }
 
     override fun cancel() {
-        upstream.let {
-            upstream = Subscription.TERMINATED
-            downstream = null
-            it?.cancel()
+        if (downStream !== null) {
+            val up = upStream
+            upStream = Subscription.TERMINATED
+            downStream = null
+            up?.cancel()
         }
     }
 
     protected open fun terminateWhenUpstreamFinish(): FlowSubscriber<R>? {
-        val down = downstream
-        upstream = Subscription.TERMINATED
-        downstream = null
+        val down = downStream
+        upStream = Subscription.TERMINATED
+        downStream = null
         return down
     }
 
     protected open fun terminateWhenErrorInHandle(): FlowSubscriber<R>? {
-        val up = upstream
-        val down = downstream
-        upstream = Subscription.TERMINATED
-        downstream = null
+        val up = upStream
+        val down = downStream
+        upStream = Subscription.TERMINATED
+        downStream = null
 
         up?.cancel()
         return down

@@ -32,11 +32,21 @@ class AsyncBlockFlowTask<T>(
         try {
             action(this)
         } catch (e: Throwable) {
-            (if (isCanceled()) Tidy else flowSubscriber).onError(e)
+            if (isCanceled()) {
+                Tidy.onError(e)
+            } else {
+                Tidy.main.start {
+                    flowSubscriber.onError(e)
+                }
+            }
             return
         }
+
         if (get()) return
-        flowSubscriber.onComplete()
+
+        Tidy.main.start {
+            flowSubscriber.onComplete()
+        }
     }
 
     @MustCallInMainPlane
@@ -49,6 +59,8 @@ class AsyncBlockFlowTask<T>(
     override fun onAsyncValue(value: T) {
         if (get()) return
 
-        Tidy.main.start { flowSubscriber.onValue(value) }
+        Tidy.main.start {
+            flowSubscriber.onValue(value)
+        }
     }
 }

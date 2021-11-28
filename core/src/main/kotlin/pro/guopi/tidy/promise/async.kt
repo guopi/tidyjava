@@ -13,7 +13,7 @@ interface AsyncPromiseSubscriber<in T> {
 }
 
 fun <R> AsyncPlane.asyncCall(action: () -> R): Promise<R> {
-    return this.asyncRun { s ->
+    return this.asyncPromise { s ->
         try {
             val r = action()
             s.onAsyncValue(r)
@@ -23,7 +23,7 @@ fun <R> AsyncPlane.asyncCall(action: () -> R): Promise<R> {
     }
 }
 
-fun <R> AsyncPlane.asyncRun(
+fun <R> AsyncPlane.asyncPromise(
     action: (AsyncPromiseSubscriber<R>) -> Unit,
 ): Promise<R> {
     val promise = StdPromise<R>()

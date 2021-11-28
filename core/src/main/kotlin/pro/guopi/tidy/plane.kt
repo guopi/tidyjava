@@ -30,7 +30,7 @@ interface Plane {
     fun startDelay(delay: Long, unit: TimeUnit, action: Runnable)
 }
 
-fun Plane.startLater(action: () -> Unit) {
+fun Plane.startLater(action: Runnable) {
     startDelay(0, TimeUnit.NANOSECONDS, action)
 }
 

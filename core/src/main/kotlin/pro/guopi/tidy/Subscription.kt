@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package pro.guopi.tidy
 
 @FunctionalInterface

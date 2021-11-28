@@ -1,69 +1,107 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.*
 
-fun <T, R> Flowable<T>.flatMap(mapper: (T) -> Flowable<R>): Flowable<R> {
+fun <T, R> Flowable<T>.flatMap(
+    mapper: (T) -> Flowable<R>,
+    delayErrors: Boolean = false,
+    maxConcurrency: Int = Int.MAX_VALUE,
+    bufferSize: Int = 256,
+): Flowable<R> {
     return FlowFlatMap(this, mapper)
 }
 
 class FlowFlatMap<T, R>(
     val source: Flowable<T>,
     val mapper: (T) -> Flowable<R>,
+    val delayErrors: Boolean,
+    val maxConcurrency: Int,
+    val bufferSize: Int,
 ) : Flowable<R> {
     override fun subscribe(subscriber: FlowSubscriber<R>) {
-        source.subscribe(UpSubscriber(subscriber, this.mapper))
+        source.subscribe(
+            UpSubscriber(subscriber, this.mapper, delayErrors, maxConcurrency, bufferSize)
+        )
     }
 
     private class UpSubscriber<T, R>(
-        downstream: FlowSubscriber<R>,
+        downStream: FlowSubscriber<R>,
         private val mapper: (T) -> Flowable<R>,
-    ) : FilterSubscriber<T, R>(downstream) {
+        val delayErrors: Boolean,
+        val maxConcurrency: Int,
+        val bufferSize: Int,
+    ) : FlowSubscriber<T>, Subscription {
+        var upStream: Subscription? = null
+        var downStream: FlowSubscriber<R>? = downStream
+        var firstError: Throwable? = null
 
-        override fun onValue(value: T) {
-            downstream?.let { down ->
-                try {
-                    mapper(value).subscribe(ChildSubscriber())
-                } catch (e: Throwable) {
-                    terminateWhenErrorInHandle().safeOnError(e)
+        override fun onSubscribe(subscription: Subscription) {
+            upStream.let { up ->
+                if (up === null) {
+                    upStream = subscription
+                    downStream?.onSubscribe(this)
+                } else {
+                    Subscription.handleSubscriptionAlreadySet(up, subscription)
                 }
+            }
+        }
+
+        private inline fun isTerminatedOrCanceled(): Boolean {
+            return Subscription.isTerminatedOrCanceled(upStream)
+        }
+
+        override fun onError(error: Throwable) {
+            if (isTerminatedOrCanceled()) {
+                Tidy.onError(error)
+                return
+            }
+
+            if (delayErrors) {
+                val first = firstError
+                if (first !== null) {
+                    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+                    (first as java.lang.Throwable).addSuppressed(error)
+                } else {
+                    firstError = error
+                }
+                onUpStreamEnd()
+            } else {
+                upStream = Subscription.TERMINATED
+                downStream.safeOnError(error)
+                downStream = null
+                cancelAllChildren()
             }
         }
 
         override fun cancel() {
-            super.cancel()
-            childStream?.let {
-                childStream = null
-                it.cancel()
+            val up = upStream
+            if (up !== Subscription.CANCELED) {
+                upStream = Subscription.CANCELED
+                downStream = null
+                up?.cancel()
+                cancelAllChildren()
             }
         }
 
-        override fun terminateWhenUpstreamFinish(): FlowSubscriber<R>? {
-            childStream = Subscription.TERMINATED
-            return super.terminateWhenUpstreamFinish()
+        override fun onComplete() {
+            if (upStream !== Subscription.CANCELED) {
+                upStream = Subscription.TERMINATED
+                onUpStreamEnd()
+            }
         }
 
-        private inner class ChildSubscriber : FlowSubscriber<R> {
-            override fun onSubscribe(subscription: Subscription) {
-                childStream.let { child ->
-                    if (child === null) {
-                        childStream = subscription
-                    } else {
-                        Subscription.handleSubscriptionAlreadySet(child, subscription)
-                    }
-                }
-            }
+        private fun onUpStreamEnd() {
+            tryEndDownStream()
+        }
 
-            override fun onValue(value: R) {
-                terminateWhenUpstreamFinish()?.onValue(value)
-            }
+        private fun tryEndDownStream() {
+            TODO("Not yet implemented")
+        }
 
-            override fun onComplete() {
-                terminateWhenUpstreamFinish()?.onComplete()
-            }
-
-            override fun onError(error: Throwable) {
-                terminateWhenUpstreamFinish()?.safeOnError(error)
-            }
+        private fun cancelAllChildren() {
+            TODO("Not yet implemented")
         }
     }
 
