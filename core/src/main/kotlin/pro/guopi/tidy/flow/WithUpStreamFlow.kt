@@ -4,25 +4,25 @@ import pro.guopi.tidy.FlowSubscriber
 import pro.guopi.tidy.Subscription
 import pro.guopi.tidy.Tidy
 
-abstract class WithFlowUpStream<T> : FlowSubscriber<T> {
+abstract class WithUpStreamFlow<T> : FlowSubscriber<T> {
     protected var upStream: Subscription? = null
     protected var upState = FlowState.STARTED
 
-    abstract fun onCompleteActual()
-    abstract fun onErrorActual(error: Throwable)
-    abstract fun onSubscribeActual()
+    abstract fun onUpStreamComplete()
+    abstract fun onUpStreamError(error: Throwable)
+    abstract fun onUpStreamSubscribe()
 
     override fun onSubscribe(subscription: Subscription) {
         if (upState === FlowState.STARTED) {
             upState = FlowState.SUBSCRIBED
             upStream = subscription
-            onSubscribeActual()
+            onUpStreamSubscribe()
         } else {
             Subscription.cannotOnSubscribe(upStream, subscription)
         }
     }
 
-    protected inline fun doIfSubscribed(action: () -> Unit) {
+    protected inline fun ifUpStreamSubscribed(action: () -> Unit) {
         when (upState) {
             FlowState.SUBSCRIBED -> {
                 action()
@@ -34,18 +34,18 @@ abstract class WithFlowUpStream<T> : FlowSubscriber<T> {
 
 
     override fun onComplete() {
-        doIfSubscribed {
+        ifUpStreamSubscribed {
             upState = FlowState.TERMINATED
             upStream = null
-            onCompleteActual()
+            onUpStreamComplete()
         }
     }
 
     override fun onError(error: Throwable) {
-        doIfSubscribed {
+        ifUpStreamSubscribed {
             upState = FlowState.TERMINATED
             upStream = null
-            onErrorActual(error)
+            onUpStreamError(error)
         }
     }
 

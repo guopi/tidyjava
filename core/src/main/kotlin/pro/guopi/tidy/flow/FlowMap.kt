@@ -15,7 +15,7 @@ class FlowMap<T, R>(
     override fun subscribe(subscriber: FlowSubscriber<R>) {
         source.subscribe(object : FilterSubscriber<T, R>(subscriber) {
             override fun onValue(value: T) {
-                doIfSubscribed {
+                ifUpStreamSubscribed {
                     try {
                         val r = mapper(value)
                         downStream?.onValue(r)

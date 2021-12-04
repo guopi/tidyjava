@@ -7,10 +7,10 @@ import pro.guopi.tidy.safeOnError
 
 abstract class FilterSubscriber<T, R>(
     downStream: FlowSubscriber<R>,
-) : WithFlowUpStream<T>(), Subscription {
+) : WithUpStreamFlow<T>(), Subscription {
     protected var downStream: FlowSubscriber<R>? = downStream
 
-    override fun onSubscribeActual() {
+    override fun onUpStreamSubscribe() {
         downStream?.onSubscribe(this)
     }
 
@@ -20,11 +20,11 @@ abstract class FilterSubscriber<T, R>(
         return down
     }
 
-    override fun onCompleteActual() {
+    override fun onUpStreamComplete() {
         clearDownStream()?.onComplete()
     }
 
-    override fun onErrorActual(error: Throwable) {
+    override fun onUpStreamError(error: Throwable) {
         clearDownStream().safeOnError(error)
     }
 
