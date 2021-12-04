@@ -1,3 +1,5 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.*
@@ -48,7 +50,7 @@ class FlowConcatMap<T, R>(
             } else {
                 firstError = error
             }
-            tryFinishDownStream()
+            tryFinish()
         }
 
         fun onChildError(child: ChildStream<R>, error: Throwable) {
@@ -77,7 +79,7 @@ class FlowConcatMap<T, R>(
         fun onChildComplete(child: ChildStream<R>) {
             startingChildren.remove(child)
             if (upState !== FlowState.CANCELED) {
-                tryFinishDownStream()
+                tryFinish()
             }
         }
 
@@ -105,7 +107,7 @@ class FlowConcatMap<T, R>(
         }
 
         override fun onUpStreamComplete() {
-            tryFinishDownStream()
+            tryFinish()
         }
 
         private fun subscribeChild(childFlow: Flowable<R>) {
@@ -129,7 +131,7 @@ class FlowConcatMap<T, R>(
         private inline fun createWaitingChildren() =
             (waitingChildren ?: LinkedList<Flowable<R>>().also { waitingChildren = it })
 
-        private fun tryFinishDownStream() {
+        private fun tryFinish() {
             waitingChildren?.let {
                 while (canSubscribeChild()) {
                     val first = it.pollFirst() ?: break
