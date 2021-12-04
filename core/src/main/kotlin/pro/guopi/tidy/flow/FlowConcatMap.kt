@@ -5,15 +5,23 @@ package pro.guopi.tidy.flow
 import pro.guopi.tidy.*
 import java.util.*
 
+fun <T, R> Flowable<T>.concatMap(
+    mapper: (T) -> Flowable<R>,
+    delayErrors: ErrorDelayMode = ErrorDelayMode.Immediate,
+    bufferSize: Int = Int.MAX_VALUE,
+): Flowable<R> {
+    return FlowConcatMap(this, mapper, delayErrors, bufferSize)
+}
+
 class FlowConcatMap<T, R>(
     private val source: Flowable<T>,
     private val mapper: (T) -> Flowable<R>,
     private val delayErrors: ErrorDelayMode,
-    private val maxConcurrency: Int,
+    private val bufferSize: Int,
 ) : Flowable<R> {
     override fun subscribe(subscriber: FlowSubscriber<R>) {
         source.subscribe(
-            MainSubscriber(subscriber, this.mapper, delayErrors, maxConcurrency)
+            MainSubscriber(subscriber, this.mapper, delayErrors, bufferSize)
         )
     }
 
@@ -21,12 +29,12 @@ class FlowConcatMap<T, R>(
         downStream: FlowSubscriber<R>,
         private val mapper: (T) -> Flowable<R>,
         val delayErrors: ErrorDelayMode,
-        val maxConcurrency: Int,
+        val bufferSize: Int,
     ) : WithUpStreamFlow<T>(), Subscription {
         private var downStream: FlowSubscriber<R>? = downStream
         private var firstError: Throwable? = null
-        private val startingChildren = ArrayList<ChildStream<R>>() //todo fastlist
-        private var waitingChildren: LinkedList<Flowable<R>>? = null //todo fastlist
+        private var currentChild: ChildStream<R>? = null
+        private var waitingList: LinkedList<T>? = null //todo fastlist
 
         override fun onUpStreamSubscribe() {
             downStream?.onSubscribe(this)
@@ -43,6 +51,24 @@ class FlowConcatMap<T, R>(
             }
         }
 
+        fun onChildError(error: Throwable) {
+            currentChild = null
+
+            if (upState === FlowState.CANCELED) {
+                Tidy.onError(error)
+            } else {
+                if (delayErrors === ErrorDelayMode.UntilAllEnd) {
+                    delayError(error)
+                } else {
+                    cancelUpStream()
+                    cancelAllChildren()
+                    val down = downStream
+                    downStream = null
+                    down.safeOnError(firstError?.safeAddSuppressed(error) ?: error)
+                }
+            }
+        }
+
         private fun delayError(error: Throwable) {
             val first = firstError
             if (first !== null) {
@@ -53,56 +79,36 @@ class FlowConcatMap<T, R>(
             tryFinish()
         }
 
-        fun onChildError(child: ChildStream<R>, error: Throwable) {
-            startingChildren.remove(child)
-
-            if (upState !== FlowState.CANCELED) {
-                if (delayErrors !== ErrorDelayMode.UntilEnd) {
-                    cancelUpStream()
-                    cancelAllChildren()
-                    val down = downStream
-                    downStream = null
-
-                    down.safeOnError(firstError?.safeAddSuppressed(error) ?: error)
-                } else {
-                    delayError(error)
-                }
-            }
-        }
-
-        fun onChildValue(child: ChildStream<R>, value: R) {
+        fun onChildValue(value: R) {
             if (upState !== FlowState.CANCELED) {
                 downStream?.onValue(value)
             }
         }
 
-        fun onChildComplete(child: ChildStream<R>) {
-            startingChildren.remove(child)
+        fun onChildComplete() {
+            currentChild = null
             if (upState !== FlowState.CANCELED) {
                 tryFinish()
             }
         }
 
         override fun cancel() {
+            cancelAllChildren()
+
             if (cancelUpStream()) {
                 downStream = null
-                cancelAllChildren()
             } else if (upState === FlowState.TERMINATED) {
                 upState = FlowState.CANCELED
-                cancelAllChildren()
             }
         }
 
         override fun onValue(value: T) {
             ifUpStreamSubscribed {
-                val r = try {
-                    mapper(value)
-                } catch (e: Throwable) {
-                    cancelUpStream()
-                    onUpStreamError(e)
-                    return
+                if (currentChild === null) {
+                    startChildFlow(value)
+                } else {
+                    addToWaitingList(value)
                 }
-                subscribeChild(r)
             }
         }
 
@@ -110,35 +116,38 @@ class FlowConcatMap<T, R>(
             tryFinish()
         }
 
-        private fun subscribeChild(childFlow: Flowable<R>) {
-            if (canSubscribeChild()) {
-                startChildFlow(childFlow)
-            } else {
-                createWaitingChildren().add(childFlow)
+        private fun addToWaitingList(value: T) {
+            val list = waitingList ?: LinkedList<T>().also {
+                waitingList = it
             }
+            if (list.size >= bufferSize) {
+                Tidy.onError(TidyError("concatMap buffer reach limit:$bufferSize"))
+                return
+            }
+            list.add(value)
         }
 
-        private fun startChildFlow(childFlow: Flowable<R>) {
+        private fun startChildFlow(value: T) {
+            val r = try {
+                mapper(value)
+            } catch (e: Throwable) {
+                cancelUpStream()
+                onChildError(e)
+                return
+            }
             val childStream = ChildStream<R>(this)
-            startingChildren.add(childStream)
-            childFlow.subscribe(childStream)
+            currentChild = childStream
+            r.subscribe(childStream)
         }
-
-        private fun canSubscribeChild(): Boolean {
-            return startingChildren.size < maxConcurrency
-        }
-
-        private inline fun createWaitingChildren() =
-            (waitingChildren ?: LinkedList<Flowable<R>>().also { waitingChildren = it })
 
         private fun tryFinish() {
-            waitingChildren?.let {
-                while (canSubscribeChild()) {
-                    val first = it.pollFirst() ?: break
-                    startChildFlow(first)
-                }
+            if (currentChild === null) {
+                waitingList
+                    ?.pollFirst()
+                    ?.let(this::startChildFlow)
             }
-            if (startingChildren.isEmpty()) {
+
+            if (currentChild === null && upState === FlowState.TERMINATED) {
                 downStream?.let { down ->
                     downStream = null
 
@@ -153,22 +162,28 @@ class FlowConcatMap<T, R>(
         }
 
         private fun cancelAllChildren() {
-            startingChildren.forEach(ChildStream<R>::cancelChild)
-            startingChildren.clear()
+            currentChild?.let {
+                currentChild = null
+                it.cancelChild()
+            }
+            waitingList?.let {
+                waitingList = null
+                it.clear()
+            }
         }
     }
 
     private class ChildStream<R>(val parent: MainSubscriber<*, R>) : WithUpStreamFlow<R>() {
         override fun onValue(value: R) {
-            parent.onChildValue(this, value)
+            parent.onChildValue(value)
         }
 
         override fun onUpStreamComplete() {
-            parent.onChildComplete(this)
+            parent.onChildComplete()
         }
 
         override fun onUpStreamError(error: Throwable) {
-            parent.onChildError(this, error)
+            parent.onChildError(error)
         }
 
         override fun onUpStreamSubscribe() {

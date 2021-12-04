@@ -16,7 +16,7 @@ fun <T, R> Flowable<T>.flatMap(
 enum class ErrorDelayMode {
     Immediate,
     UntilChildFlowError,
-    UntilEnd
+    UntilAllEnd
 }
 
 class FlowFlatMap<T, R>(
@@ -57,6 +57,24 @@ class FlowFlatMap<T, R>(
             }
         }
 
+        fun onChildError(child: ChildStream<R>, error: Throwable) {
+            startingChildren.remove(child)
+
+            if (upState === FlowState.CANCELED) {
+                Tidy.onError(error)
+            } else {
+                if (delayErrors === ErrorDelayMode.UntilAllEnd) {
+                    delayError(error)
+                } else {
+                    cancelUpStream()
+                    cancelAllChildren()
+                    val down = downStream
+                    downStream = null
+                    down.safeOnError(firstError?.safeAddSuppressed(error) ?: error)
+                }
+            }
+        }
+
         private fun delayError(error: Throwable) {
             val first = firstError
             if (first !== null) {
@@ -65,23 +83,6 @@ class FlowFlatMap<T, R>(
                 firstError = error
             }
             tryFinish()
-        }
-
-        fun onChildError(child: ChildStream<R>, error: Throwable) {
-            startingChildren.remove(child)
-
-            if (upState !== FlowState.CANCELED) {
-                if (delayErrors !== ErrorDelayMode.UntilEnd) {
-                    cancelUpStream()
-                    cancelAllChildren()
-                    val down = downStream
-                    downStream = null
-
-                    down.safeOnError(firstError?.safeAddSuppressed(error) ?: error)
-                } else {
-                    delayError(error)
-                }
-            }
         }
 
         fun onChildValue(child: ChildStream<R>, value: R) {
@@ -116,20 +117,17 @@ class FlowFlatMap<T, R>(
                     onUpStreamError(e)
                     return
                 }
-                subscribeChild(r)
+
+                if (canSubscribeChild()) {
+                    startChildFlow(r)
+                } else {
+                    createWaitingChildren().add(r)
+                }
             }
         }
 
         override fun onUpStreamComplete() {
             tryFinish()
-        }
-
-        private fun subscribeChild(childFlow: Flowable<R>) {
-            if (canSubscribeChild()) {
-                startChildFlow(childFlow)
-            } else {
-                createWaitingChildren().add(childFlow)
-            }
         }
 
         private fun startChildFlow(childFlow: Flowable<R>) {
@@ -152,7 +150,8 @@ class FlowFlatMap<T, R>(
                     startChildFlow(first)
                 }
             }
-            if (startingChildren.isEmpty()) {
+
+            if (startingChildren.isEmpty() && upState === FlowState.TERMINATED) {
                 downStream?.let { down ->
                     downStream = null
 
@@ -169,6 +168,7 @@ class FlowFlatMap<T, R>(
         private fun cancelAllChildren() {
             startingChildren.forEach(ChildStream<R>::cancelChild)
             startingChildren.clear()
+            waitingChildren?.clear()
         }
     }
 

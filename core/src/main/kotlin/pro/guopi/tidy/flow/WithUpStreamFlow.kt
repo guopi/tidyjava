@@ -46,7 +46,9 @@ abstract class WithUpStreamFlow<T> : FlowSubscriber<T> {
             upState = FlowState.TERMINATED
             upStream = null
             onUpStreamError(error)
+            return
         }
+        Tidy.onError(error)
     }
 
     protected fun cancelUpStream(): Boolean {
