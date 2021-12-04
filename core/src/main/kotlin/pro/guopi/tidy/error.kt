@@ -11,6 +11,12 @@ fun ErrorSubscriber?.safeOnError(e: Throwable) {
     (this ?: Tidy).onError(e)
 }
 
+inline fun Throwable.safeAddSuppressed(error:Throwable): Throwable {
+    @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
+    (this as java.lang.Throwable).addSuppressed(error)
+    return this
+}
+
 inline fun runOrHandleError(action: Runnable) {
     try {
         action.run()

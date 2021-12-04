@@ -1,25 +1,9 @@
-@file:Suppress("NOTHING_TO_INLINE")
-
 package pro.guopi.tidy.flow
 
 import pro.guopi.tidy.*
 import java.util.*
 
-fun <T, R> Flowable<T>.flatMap(
-    mapper: (T) -> Flowable<R>,
-    delayErrors: ErrorDelayMode = ErrorDelayMode.Immediate,
-    maxConcurrency: Int = Int.MAX_VALUE,
-): Flowable<R> {
-    return FlowFlatMap(this, mapper, delayErrors, maxConcurrency)
-}
-
-enum class ErrorDelayMode {
-    Immediate,
-    UntilChildFlowError,
-    UntilEnd
-}
-
-class FlowFlatMap<T, R>(
+class FlowConcatMap<T, R>(
     private val source: Flowable<T>,
     private val mapper: (T) -> Flowable<R>,
     private val delayErrors: ErrorDelayMode,
